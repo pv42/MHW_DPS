@@ -18,6 +18,8 @@ namespace mhw_dps_wpf {
                 if (_damage > value) { // i am almost sure it should be the other way around but whatever
                     hitlist.Clear();  // reset
                     Console.WriteLine("Reseted hit history");
+                    _window.log("reseted player " + name);
+
                 } else {
                     if (_damage != value && initialized && !name.Equals("")) {
                         _window.log(name + " hit for " + (value - _damage));

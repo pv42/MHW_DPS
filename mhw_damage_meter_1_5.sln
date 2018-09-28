@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2019
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mhw_damage_meter_1_5", "mhw_damage_meter_1_5.csproj", "{72EBB578-3799-4A35-BD23-89D83EBB3B04}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{72EBB578-3799-4A35-BD23-89D83EBB3B04}.Debug|x64.ActiveCfg = Debug|x64
+		{72EBB578-3799-4A35-BD23-89D83EBB3B04}.Debug|x64.Build.0 = Debug|x64
+		{72EBB578-3799-4A35-BD23-89D83EBB3B04}.Release|x64.ActiveCfg = Release|x64
+		{72EBB578-3799-4A35-BD23-89D83EBB3B04}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {36B007A8-19BA-4884-B202-A30C37B35B55}
+	EndGlobalSection
+EndGlobal

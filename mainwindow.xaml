@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Window x:Class="mhw_dps_wpf.MainWindow" Title="mhw_dps_display" Height="150" Width="309" MinWidth="200" MinHeight="70" Background="#00FFFFFF" Loaded="Window_Loaded" SizeChanged="Window_SizeChanged" MouseDown="Window_MouseDown" MouseWheel="Window_MouseWheel" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:local="clr-namespace:mhw_dps_wpf">
+    <Grid>
+        <Canvas Name="front_canvas" Grid.Row="0" Grid.Column="0"/>
+        <TextBox Name="combatLog" Grid.Row="1" Grid.Column="0" VerticalAlignment="Bottom" Opacity="0.65" Background="DarkSlateGray" Foreground="White" VerticalScrollBarVisibility="Visible" IsReadOnly="True"/>
+    </Grid>
+</Window>
