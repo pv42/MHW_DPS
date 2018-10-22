@@ -193,6 +193,10 @@ namespace mhw_dps_wpf
 
         private TextBlock[] player_dps_tbs = new TextBlock[4];
 
+        private LogFile logFile;
+
+        private bool questEnded = false;
+
         
 
 		private static Color[] player_colors = new Color[4]
@@ -217,13 +221,11 @@ namespace mhw_dps_wpf
 			base.WindowStyle = WindowStyle.None;
 			base.Background = Brushes.Transparent;
 			find_game_proc();
-			mhw.is_wegame_build = game.MainWindowTitle.Contains("怪物猎人 世界");
-			bool flag = game.MainWindowTitle.Contains("3142");
-			if (!mhw.is_wegame_build)
-			{
+			mhw.is_wegame_build = game.MainWindowTitle.Contains("怪物猎人 世界"); // Monster hunter world
+            bool flag = game.MainWindowTitle.Contains("3142");
+			if (!mhw.is_wegame_build) {
 				Console.WriteLine("main module base adress 0x" + game.MainModule.BaseAddress.ToString("X"));
-				List<byte?[]> patterns = new List<byte?[]>
-				{
+				List<byte?[]> patterns = new List<byte?[]> {
 					pattern_1,
 					pattern_2,
 					pattern_3,
@@ -236,20 +238,20 @@ namespace mhw_dps_wpf
 				ulong num3 = array[2] + 15 + mhw.read_uint(game.Handle, (IntPtr)(long)(array[2] + 15 + 2)) + 6;
 				ulong num4 = array[3] + mhw.read_uint(game.Handle, (IntPtr)(long)(array[3] + 3)) + 7;
 				Console.WriteLine("0x" + num.ToString("X"));
-				Console.WriteLine("0x" + num2.ToString("X"));
-				Console.WriteLine("0x" + num3.ToString("X"));
-				Console.WriteLine("0x" + num4.ToString("X"));
+				Console.WriteLine("dmg base adress 0 0x" + num2.ToString("X"));
+				Console.WriteLine("dmg base adress 1 0x" + num3.ToString("X"));
+				Console.WriteLine("names base adress 0x" + num4.ToString("X"));
 				assert(num > 5368725504L && num < 5637144576L && num2 > 5368725504L && num2 < 5637144576L && num3 > 5368725504L && num3 < 5637144576L && num4 > 5368725504L && num4 < 5637144576L, "failed to locate offsets (step 2).");
 				mhw.loc1 = (long)num;
-				mhw.loc2 = (long)num2;
-				mhw.loc3 = (long)num3;
-				mhw.loc4 = (long)num4;
+				mhw.damage_base_loc0 = (long)num2;
+				mhw.damage_base_loc1 = (long)num3;
+				mhw.names_base_adress = (long)num4;
 			} else {
-				assert(flag, "版本错误，必须为3142才能使用");
-				mhw.loc1 = 5428988018L;
-				mhw.loc2 = 5430764760L;
-				mhw.loc3 = 5430775464L;
-				mhw.loc4 = 5444356280L;
+				assert(flag, "版本错误，必须为3142才能使用"); //The version is wrong and must be 3142 to use
+                mhw.loc1 = 5428988018L;
+				mhw.damage_base_loc0 = 5430764760L;
+				mhw.damage_base_loc1 = 5430775464L;
+				mhw.names_base_adress = 5444356280L;
 			}
             players = new PlayerList(this);
             InitializeComponent();
@@ -264,49 +266,61 @@ namespace mhw_dps_wpf
 			}
 		}
 
-		private void find_game_proc()
-		{
+		private void find_game_proc() {
 			IEnumerable<Process> source = from x in Process.GetProcesses()
 			where x.ProcessName == "MonsterHunterWorld"
 			select x;
 			assert(source.Count() == 1, "frm_main_load: #proc not 1. (Is the game running?)");
 			game = source.FirstOrDefault();
-			try
-			{
+			try {
 				Console.WriteLine("Game base adress 0x" + game.MainModule.BaseAddress.ToString("X"));
-			}
-			catch (Exception)
-			{
+			} catch (Exception) {
 				assert(flag: false, "access denied. (Is the game running as admin while the tool isn't? ) WEGAME版必须以管理员身份运行");
 			}
 		}
 
-		private void update_tick(object sender, EventArgs e)
-		{
-			if (game.HasExited)
-			{
+		private void update_tick(object sender, EventArgs e) {
+			if (game.HasExited) {
 				Application.Current.Shutdown();
 			}
-			if (init_finished)
-			{
-				int[] playerDamages = mhw.get_team_dmg(game);
-				string[] playerNames = mhw.get_team_player_names(game);
+			if (init_finished) {
+                int[][] data  = mhw.get_team_data(game);
+                int[] playerDamages = data[(int)data_indices.damages];
+                int[] playerSlingers = data[(int)data_indices.slingers];
+                int[] playerTracks = data[(int)data_indices.tracks];
+                int[] playerLocates = data[(int)data_indices.located];
+                int[] playerPartsBroken = data[(int)data_indices.parts];
+                string[] playerNames = mhw.get_team_player_names(game);
 				int playerSeatID = mhw.get_player_seat_id(game);
-				bool flag = playerDamages.Sum() != 0 && playerSeatID >= 0 && playerNames[0] != "";
+                bool isValid = playerDamages.Sum() != 0 && playerSeatID >= 0 && playerNames[0] != "";
 				bool flag2 = false;
 				for (int i = 0; i < 4; i++) {
 					flag2 |= (players[i].damage != playerDamages[i] && playerDamages[i] > 0);
-					flag2 |= (players[i].name != playerNames[i] && playerNames[i] != "");
+                    flag2 |= (players[i].slingers != playerSlingers[i] && playerSlingers[i] > 0);
+                    flag2 |= (players[i].parts_broken != playerPartsBroken[i] && playerPartsBroken[i] > 0);
+                    flag2 |= (players[i].tracks_collected != playerTracks[i] && playerTracks[i] > 0);
+                    flag2 |= (players[i].monsters_located != playerLocates[i] && playerLocates[i] > 0);
+                    flag2 |= (players[i].name != playerNames[i] && playerNames[i] != "");
 				}
-                if (flag && flag2) {
+                if (isValid && flag2) {
                     for (int i = 0; i < 4; i++) {
                         players[i].name = playerNames[i];
                         players[i].damage = playerDamages[i];
+                        players[i].slingers = playerSlingers[i];
+                        players[i].parts_broken = playerPartsBroken[i];
+                        players[i].monsters_located = playerLocates[i];
+                        players[i].tracks_collected = playerTracks[i];
                     }
 					my_seat_id = playerSeatID;
 					update_info(my_seat_id < 0);
+                    questEnded = false;
 				} else if (playerSeatID == -1 && my_seat_id != -5) {
-					update_info(quest_end: true);
+                    if(!questEnded) {
+                        log("Quest ended");
+                        log("-----------");
+                    }
+                    questEnded = true;
+                    update_info(quest_end: true);
 				}
 			}
 		}
@@ -345,10 +359,8 @@ namespace mhw_dps_wpf
             }
 		}
 
-		private void update_layout()
-		{
-			if (init_finished)
-			{
+		private void update_layout() {
+			if (init_finished) {
                 double totalHeight = front_canvas.ActualHeight * 0.5;
 				double verticalPadding = 0.0;
                 double relativeFontSize = 14;
@@ -397,7 +409,6 @@ namespace mhw_dps_wpf
                 combatLog.Height = front_canvas.ActualHeight * (0.5 + 0.125 * (4 - (players.getPlayerNumber()==0 ? 4 : players.getPlayerNumber())));
                 combatLog.Width = front_canvas.ActualWidth;
                 combatLog.FontSize = relativeLogFontSize * barHeight / 20.0;
-
             }
 		}
 

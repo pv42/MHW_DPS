@@ -53,6 +53,7 @@
     <Compile Include="mhw_dps_wpf.Properties\Resources.cs" />
     <Compile Include="mhw_dps_wpf.Properties\Settings.cs" />
     <Compile Include="mhw_dps_wpf\App.cs" />
+    <Compile Include="mhw_dps_wpf\LogFile.cs" />
     <Compile Include="mhw_dps_wpf\PlayerList.cs" />
     <Compile Include="mhw_dps_wpf\Player.cs" />
     <Compile Include="mhw_dps_wpf\MainWindow.cs" />

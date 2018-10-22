@@ -6,6 +6,10 @@ namespace mhw_dps_wpf {
     class Player {
         public string name { get; set; }
         int _damage;
+        int _slingers;
+        int _parts_broken;
+        int _located;
+        int _tracks;
         MainWindow _window;
         bool initialized = false;
         LinkedList<Hit> hitlist = new LinkedList<Hit>();
@@ -15,26 +19,110 @@ namespace mhw_dps_wpf {
                 return _damage;
             }
             set {
-                if (_damage > value) { // i am almost sure it should be the other way around but whatever
-                    hitlist.Clear();  // reset
-                    Console.WriteLine("Reseted hit history");
-                    _window.log("reseted player " + name);
-
-                } else {
-                    if (_damage != value && initialized && !name.Equals("")) {
-                        _window.log(name + " hit for " + (value - _damage));
-                        hitlist.AddFirst(new Hit(value - _damage, time()));
-                    }
+                if (_damage > value || !initialized) { 
+                    init();
                 }
-                
-                initialized = true;
+                if (_damage != value && initialized && !name.Equals("")) {
+                    _window.log(name + " hit for " + (value - _damage));
+                    hitlist.AddFirst(new Hit(value - _damage, time()));
+                }
                 _damage = value;
             }
         }
 
+        public int slingers {
+            get {
+                return _slingers;
+            }
+            set {
+                if (_slingers > value || !initialized) {
+                    init();  
+                } 
+                if (_slingers != value && initialized && !name.Equals("")) {
+                    if (value - _slingers == 1) {
+                        _window.log(name + " hit a slinger shot");
+                    } else { 
+                        _window.log(name + " hit a slinger shot (" + (value - _slingers) + " hits)");
+                    }
+                }
+                _slingers = value;
+            }
+        }
+
+        public int parts_broken {
+            get {
+                return _parts_broken;
+            }
+            set {
+                if (_parts_broken > value || !initialized) {
+                    init();
+                }
+                if (_parts_broken != value && initialized && !name.Equals("")) {
+                    if (value - _parts_broken == 1) {
+                        _window.log(name + " broke a part");
+                    } else {
+                        _window.log(name + " broke multiple parts!");
+                    }
+                }
+                _parts_broken = value;
+            }
+        }
+
+        public int tracks_collected {
+            get {
+                return _tracks;
+            }
+            set {
+                if (_tracks > value || !initialized) {
+                    init();
+                }
+                if (_tracks != value && initialized && !name.Equals("")) {
+                    if (value - _tracks == 1) {
+                        _window.log(name + " collected a track");
+                    } else {
+                        _window.log(name + " collected multiple tracks!");
+                    }
+                }
+                _tracks = value;
+            }
+        }
+
+        public int monsters_located {
+            get {
+                return _located;
+            }
+            set {
+                if (_located > value || !initialized) {
+                    init();
+                }
+                if (_located != value && initialized && !name.Equals("")) {
+                    if (value - _located == 1) {
+                        _window.log(name + " located a monster");
+                    } else {
+                        _window.log(name + " located multiple monsters!");
+                    }
+                }
+                _located = value;
+            }
+        }
+
+
         public Player(int damage, MainWindow window) {
             _window = window;
             _damage = damage;
+        }
+
+        void init() {
+            initialized = true;
+            hitlist.Clear();
+            _damage = 0;
+            _slingers = 0;
+            _located = 0;
+            _parts_broken = 0;
+            _tracks = 0;
+            Console.WriteLine("Reseted player " + name);
+            _window.log("reseted player " + name);
+
         }
 
         private static double time() => (DateTime.UtcNow - DateTime.MinValue).TotalSeconds;
