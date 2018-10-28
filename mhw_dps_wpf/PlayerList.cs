@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace mhw_dps_wpf {
-    class PlayerList {
+    public class PlayerList {
         private Player[] array = new Player[4];
 
         public Player this[int i] {

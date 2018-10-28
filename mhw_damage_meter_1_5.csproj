@@ -34,9 +34,13 @@
     <Reference Include="System">
       <HintPath>C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System\v4.0_4.0.0.0__b77a5c561934e089\System.dll</HintPath>
     </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml">
       <HintPath>C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Xaml\v4.0_4.0.0.0__b77a5c561934e089\System.Xaml.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml" />
     <Reference Include="WindowsBase">
       <HintPath>C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\WindowsBase\v4.0_4.0.0.0__31bf3856ad364e35\WindowsBase.dll</HintPath>
     </Reference>
@@ -54,13 +58,15 @@
     <Compile Include="mhw_dps_wpf.Properties\Settings.cs" />
     <Compile Include="mhw_dps_wpf\App.cs" />
     <Compile Include="mhw_dps_wpf\LogFile.cs" />
+    <Compile Include="mhw_dps_wpf\Monster.cs" />
     <Compile Include="mhw_dps_wpf\PlayerList.cs" />
     <Compile Include="mhw_dps_wpf\Player.cs" />
     <Compile Include="mhw_dps_wpf\MainWindow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="C:\Users\pv42\Saved Games\MHDPS\own_1.5\mainwindow.xaml" />
+    <Page Include="mainwindow.xaml" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

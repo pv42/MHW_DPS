@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace mhw_dps_wpf {
-    class Player {
+    public class Player {
         public string name { get; set; }
         int _damage;
         int _slingers;

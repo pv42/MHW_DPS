@@ -19,167 +19,8 @@ namespace mhw_dps_wpf
 {
 	public partial class MainWindow : Window, IComponentConnector
 	{
-		private static byte?[] pattern_1 = new byte?[26]
-		{
-			(byte)139,
-			(byte)13,
-			null,
-			null,
-			null,
-			null,
-			(byte)35,
-			(byte)202,
-			(byte)129,
-			(byte)249,
-			0,
-			(byte)1,
-			0,
-			0,
-			(byte)115,
-			(byte)47,
-			(byte)15,
-			(byte)183,
-			null,
-			null,
-			null,
-			null,
-			null,
-			(byte)193,
-			(byte)234,
-			(byte)16
-		};
-
-		private static byte?[] pattern_2 = new byte?[58]
-		{
-			(byte)72,
-			(byte)137,
-			(byte)116,
-			(byte)36,
-			(byte)56,
-			(byte)139,
-			(byte)112,
-			(byte)24,
-			(byte)72,
-			(byte)139,
-			null,
-			null,
-			null,
-			null,
-			null,
-			(byte)137,
-			(byte)136,
-			(byte)12,
-			(byte)5,
-			0,
-			0,
-			(byte)72,
-			(byte)139,
-			null,
-			null,
-			null,
-			null,
-			null,
-			(byte)137,
-			(byte)144,
-			(byte)16,
-			(byte)5,
-			0,
-			0,
-			(byte)72,
-			(byte)139,
-			null,
-			null,
-			null,
-			null,
-			null,
-			(byte)137,
-			(byte)152,
-			(byte)20,
-			(byte)5,
-			0,
-			0,
-			(byte)133,
-			(byte)219,
-			(byte)126,
-			null,
-			(byte)72,
-			(byte)139,
-			null,
-			null,
-			null,
-			null,
-			null
-		};
-
-		private static byte?[] pattern_3 = new byte?[21]
-		{
-			(byte)178,
-			(byte)172,
-			(byte)11,
-			0,
-			0,
-			(byte)73,
-			(byte)139,
-			(byte)217,
-			(byte)139,
-			(byte)81,
-			(byte)84,
-			(byte)73,
-			(byte)139,
-			(byte)248,
-			(byte)72,
-			(byte)139,
-			(byte)13,
-			null,
-			null,
-			null,
-			null
-		};
-
-		private static byte?[] pattern_4 = new byte?[37]
-		{
-			(byte)72,
-			(byte)139,
-			(byte)13,
-			null,
-			null,
-			null,
-			null,
-			(byte)72,
-			(byte)141,
-			(byte)84,
-			(byte)36,
-			(byte)56,
-			(byte)198,
-			(byte)68,
-			(byte)36,
-			(byte)32,
-			0,
-			(byte)77,
-			(byte)139,
-			(byte)64,
-			(byte)8,
-			(byte)232,
-			null,
-			null,
-			null,
-			null,
-			(byte)72,
-			(byte)139,
-			(byte)92,
-			(byte)36,
-			(byte)96,
-			(byte)72,
-			(byte)131,
-			(byte)196,
-			(byte)80,
-			(byte)95,
-			(byte)195
-		};
 
 		private DispatcherTimer dispatcherTimer = new DispatcherTimer();
-
-		private Process game;
 
         private PlayerList players;
 
@@ -220,44 +61,12 @@ namespace mhw_dps_wpf
 			base.AllowsTransparency = true;
 			base.WindowStyle = WindowStyle.None;
 			base.Background = Brushes.Transparent;
-			find_game_proc();
-			mhw.is_wegame_build = game.MainWindowTitle.Contains("怪物猎人 世界"); // Monster hunter world
-            bool flag = game.MainWindowTitle.Contains("3142");
-			if (!mhw.is_wegame_build) {
-				Console.WriteLine("main module base adress 0x" + game.MainModule.BaseAddress.ToString("X"));
-				List<byte?[]> patterns = new List<byte?[]> {
-					pattern_1,
-					pattern_2,
-					pattern_3,
-					pattern_4
-				};
-				ulong[] array = memory.find_patterns(game, (IntPtr)5368725504L, (IntPtr)5452595200L, patterns);
-				assert(array[0] > 5369757695L && array[1] > 5369757695L && array[1] > 5369757695L && array[3] > 5369757695L, "failed to locate offsets (step 1).");
-				ulong num = array[0] + mhw.read_uint(game.Handle, (IntPtr)(long)(array[0] + 2)) + 6;
-				ulong num2 = array[1] + 51 + mhw.read_uint(game.Handle, (IntPtr)(long)(array[1] + 54)) + 7;
-				ulong num3 = array[2] + 15 + mhw.read_uint(game.Handle, (IntPtr)(long)(array[2] + 15 + 2)) + 6;
-				ulong num4 = array[3] + mhw.read_uint(game.Handle, (IntPtr)(long)(array[3] + 3)) + 7;
-				Console.WriteLine("0x" + num.ToString("X"));
-				Console.WriteLine("dmg base adress 0 0x" + num2.ToString("X"));
-				Console.WriteLine("dmg base adress 1 0x" + num3.ToString("X"));
-				Console.WriteLine("names base adress 0x" + num4.ToString("X"));
-				assert(num > 5368725504L && num < 5637144576L && num2 > 5368725504L && num2 < 5637144576L && num3 > 5368725504L && num3 < 5637144576L && num4 > 5368725504L && num4 < 5637144576L, "failed to locate offsets (step 2).");
-				mhw.loc1 = (long)num;
-				mhw.damage_base_loc0 = (long)num2;
-				mhw.damage_base_loc1 = (long)num3;
-				mhw.names_base_adress = (long)num4;
-			} else {
-				assert(flag, "版本错误，必须为3142才能使用"); //The version is wrong and must be 3142 to use
-                mhw.loc1 = 5428988018L;
-				mhw.damage_base_loc0 = 5430764760L;
-				mhw.damage_base_loc1 = 5430775464L;
-				mhw.names_base_adress = 5444356280L;
-			}
+            mhw.initMemory();
             players = new PlayerList(this);
             InitializeComponent();
 		}
 
-		private static void assert(bool flag, string reason = "", bool show_reason = true) {
+		public static void assert(bool flag, string reason = "", bool show_reason = true) {
 			if (!flag) {
                 Application.Current.Shutdown();
                 if (show_reason) {
@@ -266,32 +75,19 @@ namespace mhw_dps_wpf
 			}
 		}
 
-		private void find_game_proc() {
-			IEnumerable<Process> source = from x in Process.GetProcesses()
-			where x.ProcessName == "MonsterHunterWorld"
-			select x;
-			assert(source.Count() == 1, "frm_main_load: #proc not 1. (Is the game running?)");
-			game = source.FirstOrDefault();
-			try {
-				Console.WriteLine("Game base adress 0x" + game.MainModule.BaseAddress.ToString("X"));
-			} catch (Exception) {
-				assert(flag: false, "access denied. (Is the game running as admin while the tool isn't? ) WEGAME版必须以管理员身份运行");
-			}
-		}
-
 		private void update_tick(object sender, EventArgs e) {
-			if (game.HasExited) {
+			if (mhw.hasGameExited()) {
 				Application.Current.Shutdown();
 			}
 			if (init_finished) {
-                int[][] data  = mhw.get_team_data(game);
-                int[] playerDamages = data[(int)data_indices.damages];
-                int[] playerSlingers = data[(int)data_indices.slingers];
-                int[] playerTracks = data[(int)data_indices.tracks];
-                int[] playerLocates = data[(int)data_indices.located];
-                int[] playerPartsBroken = data[(int)data_indices.parts];
-                string[] playerNames = mhw.get_team_player_names(game);
-				int playerSeatID = mhw.get_player_seat_id(game);
+                int[][] data  = mhw.get_team_data();
+                int[] playerDamages = data[(int)player_data_indices.damages];
+                int[] playerSlingers = data[(int)player_data_indices.slingers];
+                int[] playerTracks = data[(int)player_data_indices.tracks];
+                int[] playerLocates = data[(int)player_data_indices.located];
+                int[] playerPartsBroken = data[(int)player_data_indices.parts];
+                string[] playerNames = mhw.get_team_player_names();
+				int playerSeatID = mhw.get_player_seat_id();
                 bool isValid = playerDamages.Sum() != 0 && playerSeatID >= 0 && playerNames[0] != "";
 				bool flag2 = false;
 				for (int i = 0; i < 4; i++) {

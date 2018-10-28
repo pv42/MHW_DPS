@@ -3,26 +3,16 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-public static class memory
-{
-	public struct MEMORY_BASIC_INFORMATION64
-	{
+public static class memory {
+	public struct MEMORY_BASIC_INFORMATION64 {
 		public ulong BaseAddress;
-
 		public ulong AllocationBase;
-
 		public int AllocationProtect;
-
 		public int __alignment1;
-
 		public ulong RegionSize;
-
 		public int State;
-
 		public int Protect;
-
 		public int Type;
-
 		public int __alignment2;
 	}
 
@@ -32,17 +22,14 @@ public static class memory
 	[DllImport("kernel32.dll")]
 	public static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
 
-	public static bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer)
-	{
+	public static bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer) {
 		int lpNumberOfBytesRead = 0;
 		return ReadProcessMemory(hProcess, lpBaseAddress, lpBuffer, lpBuffer.Length, ref lpNumberOfBytesRead);
 	}
 
-	private static List<int> byte_find(byte[] src, byte[] pattern)
-	{
+	private static List<int> byte_find(byte[] src, byte[] pattern) {
 		List<int> list = new List<int>();
-		if (src.Length < pattern.Length)
-		{
+		if (src.Length < pattern.Length) {
 			return list;
 		}
 		for (int i = 0; i < src.Length - pattern.Length + 1; i++)
@@ -63,11 +50,9 @@ public static class memory
 		return list;
 	}
 
-	private static int byte_find_first(byte[] src, byte?[] pattern)
-	{
+	private static int byte_find_first(byte[] src, byte?[] pattern)	{
 		new List<int>();
-		if (src.Length < pattern.Length)
-		{
+		if (src.Length < pattern.Length){
 			return -1;
 		}
 		for (int i = 0; i < src.Length - pattern.Length + 1; i++)
@@ -92,19 +77,14 @@ public static class memory
 		IntPtr intPtr = start_from;
 		ulong[] array = new ulong[patterns.Count];
 		int num = patterns.Count;
-		do
-		{
-			if (VirtualQueryEx(proc.Handle, intPtr, out MEMORY_BASIC_INFORMATION64 lpBuffer, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION64))) > 0 && lpBuffer.RegionSize != 0)
-			{
+		do {
+			if (VirtualQueryEx(proc.Handle, intPtr, out MEMORY_BASIC_INFORMATION64 lpBuffer, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION64))) > 0 && lpBuffer.RegionSize != 0) {
 				byte[] array2 = new byte[(uint)lpBuffer.RegionSize];
 				ReadProcessMemory(proc.Handle, (IntPtr)(long)lpBuffer.BaseAddress, array2);
-				for (int i = 0; i < patterns.Count; i++)
-				{
-					if (array[i] == 0)
-					{
+				for (int i = 0; i < patterns.Count; i++) {
+					if (array[i] == 0) {
 						int num2 = byte_find_first(array2, patterns[i]);
-						if (num2 > 0)
-						{
+						if (num2 > 0) {
 							array[i] = lpBuffer.BaseAddress + (uint)num2;
 							num--;
 						}
