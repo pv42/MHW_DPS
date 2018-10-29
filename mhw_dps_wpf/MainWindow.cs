@@ -266,6 +266,7 @@ namespace mhw_dps_wpf {
             log("Monster Hunter World Damage Meter");
             log("modified by pv42");
             log("original by hqvrrsc4");
+            log("log file version " + LogFile.FILE_VERSION);
             log("---------------------------------");
 			update_layout();
 		}

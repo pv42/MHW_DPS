@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace mhw_dps_wpf {
     public class LogFile {
         const String PATH_SEPERATOR = "\\";
-        const UInt16 FILE_VERSION = 2;
+        public const UInt16 FILE_VERSION = 3;
         private FileStream fs;
         private BinaryWriter bw;
         private Int32 start_time;
@@ -49,6 +49,7 @@ namespace mhw_dps_wpf {
 
         public void writeHit(int playerIndex, int hit) {
             writeMarker(Marker.PlayerHit);
+            bw.Write((UInt16)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() - start_time)); // time
             bw.Write((UInt16)playerIndex);
             bw.Write((UInt32)hit); 
         }
@@ -58,7 +59,6 @@ namespace mhw_dps_wpf {
             int len = playerList.getPlayerNumber();
             for (int i = 0; i < len; i++) {
                 writeMarker(Marker.PlayerDamage);
-                bw.Write((UInt16)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() - start_time)); // time
                 bw.Write((UInt16)i); // player index
                 bw.Write((UInt32)playerList[i].damage); // player damage
                 
