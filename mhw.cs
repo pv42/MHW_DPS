@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Linq;
 
 public static class mhw {
     private static byte?[] pattern_1 = new byte?[26]
@@ -209,7 +209,7 @@ public static class mhw {
             ulong num2 = array[1] + 51 + mhw.read_uint(game.Handle, (IntPtr)(long)(array[1] + 54)) + 7;
             ulong num3 = array[2] + 15 + mhw.read_uint(game.Handle, (IntPtr)(long)(array[2] + 15 + 2)) + 6;
             ulong num4 = array[3] + mhw.read_uint(game.Handle, (IntPtr)(long)(array[3] + 3)) + 7;
-            Console.WriteLine("0x" + num.ToString("X"));
+            Console.WriteLine("loc1              0x" + num.ToString("X"));
             Console.WriteLine("dmg base adress 0 0x" + num2.ToString("X"));
             Console.WriteLine("dmg base adress 1 0x" + num3.ToString("X"));
             Console.WriteLine("names base adress 0x" + num4.ToString("X"));
@@ -222,10 +222,10 @@ public static class mhw {
             mhw.monster_health_base_adress = game.MainModule.BaseAddress.ToInt64() + 0x3b79ec0;
         } else {
             mhw_dps_wpf.MainWindow.assert(flag, "版本错误，必须为3142才能使用"); //The version is wrong and must be 3142 to use
-            mhw.loc1 = 5428988018L;
-            mhw.damage_base_loc0 = 5430764760L;
-            mhw.damage_base_loc1 = 5430775464L;
-            mhw.names_base_adress = 5444356280L;
+            mhw.loc1 =              0x14397C872L;
+            mhw.damage_base_loc0 =  0x143B2E4D8L;
+            mhw.damage_base_loc1 =  0x143B30EA8L;
+            mhw.names_base_adress = 0x1448248B8L;
         }
     }
 
@@ -247,15 +247,15 @@ public static class mhw {
     }
 
     public static int dword_to_int(ref byte[] array) {
-        return array[0] + (array[1] << 8) + (array[2] << 16) + (array[3] << 24);
+        return array[0] + (array[1] << 0x8) + (array[2] << 0x10) + (array[3] << 0x18);
     }
 
     // reads at loc1, retuns 0x48 + param 2 + 0x58 * read_mem & param3 
     private static ulong asm_func1(Process proc, ulong rcx, uint edx) {
         uint num = read_uint(proc.Handle, (IntPtr)loc1);
         ulong num2 = rcx;
-        rcx = (ulong)((long)(num & edx) * 88L);
-        return num2 + 72 + rcx;
+        rcx = (ulong)((long)(num & edx) * 0x58L);
+        return num2 + 0x48 + rcx;
     }
 
     public static int[][] get_team_data() {
@@ -301,14 +301,13 @@ public static class mhw {
     }
 
     public static int get_player_seat_id() {
-        Process proc = game;
-        uint num = read_uint(proc.Handle, (IntPtr)names_base_adress);
-        uint num2 = read_uint(proc.Handle, (IntPtr)(num + (is_wegame_build ? 0x560 : 0x258)));
+        uint num = read_uint(game.Handle, (IntPtr)names_base_adress);
+        uint num2 = read_uint(game.Handle, (IntPtr)(num + (is_wegame_build ? 0x560 : 0x258)));
         int result = -1;
         if (num2 > 0x1000) {
-            uint num3 = read_uint(proc.Handle, (IntPtr)(long)(num2 + 0x10));
+            uint num3 = read_uint(game.Handle, (IntPtr)(long)(num2 + 0x10));
             if (num3 != 0) {
-                result = (int)read_uint(proc.Handle, (IntPtr)(num3 + (is_wegame_build ? 0xC0F4 : 0xBFEC)));
+                result = (int)read_uint(game.Handle, (IntPtr)(num3 + (is_wegame_build ? 0xC0F4 : 0xBFEC)));
             }
         }
         return result;
@@ -349,24 +348,20 @@ public static class mhw {
     }
 
     public static string[] get_team_player_names() {
-        Process proc = game;
         string[] names = new string[4];
-        byte[] mem_name_string = new byte[40];
-        int num = (int)read_uint(proc.Handle, (IntPtr)names_base_adress) + (is_wegame_build ? 349621 : 346693);
+        byte[] mem_name_string = new byte[0x28];
+        int num = (int)read_uint(game.Handle, (IntPtr)names_base_adress) + (is_wegame_build ? 0x555B5 : 0x54A45);
         for (int i = 0; i < 4; i++) {
-            Array.Resize(ref mem_name_string, 40);
-            ReadProcessMemory(proc.Handle, (IntPtr)(num + 33 * i), mem_name_string);
+            Array.Resize(ref mem_name_string, 0x28);
+            ReadProcessMemory(game.Handle, (IntPtr)(num + 0x21 * i), mem_name_string);
             int name_len = Array.FindIndex(mem_name_string, (byte x) => x == 0);
             if (name_len == 0 || name_len == -1) {
-                if(i == 0)
-                    Console.WriteLine("NL0 = " + name_len);
                 names[i] = "";
             } else {
                 Array.Resize(ref mem_name_string, name_len);
                 names[i] = Encoding.UTF8.GetString(mem_name_string);
             }
         }
-        Console.WriteLine("N[0] = " + names[0]);
         return names;
     }
 

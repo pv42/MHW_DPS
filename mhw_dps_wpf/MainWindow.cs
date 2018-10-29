@@ -15,29 +15,23 @@ using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-namespace mhw_dps_wpf
-{
-	public partial class MainWindow : Window, IComponentConnector
-	{
+namespace mhw_dps_wpf {
+	public partial class MainWindow : Window, IComponentConnector {
 
 		private DispatcherTimer dispatcherTimer = new DispatcherTimer();
 
-        private PlayerList players;
+        public PlayerList players;
 
 		private int my_seat_id = -5;
 
 		private Rectangle[] damage_bar_rects = new Rectangle[4];
-
 		private TextBlock[] player_name_tbs = new TextBlock[4];
-
 		private TextBlock[] player_dmg_tbs = new TextBlock[4];
-
         private TextBlock[] player_dps_tbs = new TextBlock[4];
 
-        private LogFile logFile;
+        public LogFile logFile = null;
 
         private bool questEnded = false;
-
         
 
 		private static Color[] player_colors = new Color[4]
@@ -114,6 +108,7 @@ namespace mhw_dps_wpf
                     if(!questEnded) {
                         log("Quest ended");
                         log("-----------");
+                        logFile.writeBottomAndClose(players);
                     }
                     questEnded = true;
                     update_info(quest_end: true);
@@ -208,13 +203,11 @@ namespace mhw_dps_wpf
             }
 		}
 
-		private void init_canvas()
-		{
+		private void init_canvas() {
 			init_finished = true;
 			//double num = front_canvas.ActualHeight * 0.23000000417232513 - 1.75;
 			//double num2 = (front_canvas.ActualHeight - num) / 3.0;
-			for (int i = 0; i < 4; i++)
-			{
+			for (int i = 0; i < 4; i++) {
 				damage_bar_rects[i] = new Rectangle();
 				damage_bar_rects[i].Stroke = new SolidColorBrush(Colors.White);
 				damage_bar_rects[i].StrokeThickness = 0.0;
@@ -277,8 +270,7 @@ namespace mhw_dps_wpf
 			update_layout();
 		}
 
-		private void Window_Loaded(object sender, RoutedEventArgs e)
-		{
+		private void Window_Loaded(object sender, RoutedEventArgs e) {
 			init_canvas();
 			dispatcherTimer.Tick += update_tick;
 			dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 150);
@@ -305,6 +297,7 @@ namespace mhw_dps_wpf
 					DragMove();
 				}
 			} catch (Exception) {
+                Console.WriteLine("!! MouseDownException !!");
 			}
 		}
 

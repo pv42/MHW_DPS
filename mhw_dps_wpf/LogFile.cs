@@ -1,21 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace mhw_dps_wpf {
-    class LogFile {
+    public class LogFile {
         const String PATH_SEPERATOR = "\\";
-        const UInt16 FILE_VERSION = 1;
+        const UInt16 FILE_VERSION = 2;
         private FileStream fs;
         private BinaryWriter bw;
+        private Int32 start_time;
+        private Dictionary<string, int> player_indices;
         public LogFile() {
             ensurePathExists();
-            String name = getSavePath() + DateTime.Now.ToString("dd.MM.yyyy hh.mm.tt") + ".mhlog";
+            String name = getSavePath() + DateTime.Now.ToString("dd.MM.yyyy HH.mm.ss") + ".mhlog";
             fs = new FileStream(name, FileMode.Create, FileAccess.Write);
             bw = new BinaryWriter(fs);
+            player_indices = new Dictionary<string, int>();
         }
 
         public void writeHead(PlayerList playerList) {
@@ -29,6 +29,7 @@ namespace mhw_dps_wpf {
             for (int i = 0; i < len; i++) {
                 headSize += 4; // marker + index
                 headSize += playerList[i].name.Length + 1; // player name including size prefix
+                player_indices.Add(playerList[i].name, i);
             }
             bw.Write((UInt32)headSize); // head size
             writeMarker(Marker.PlayerList);
@@ -38,7 +39,12 @@ namespace mhw_dps_wpf {
                 bw.Write(playerList[i].name); // player name including size prefix
             }
             writeMarker(Marker.UnixTime);
-            bw.Write((Int32)DateTimeOffset.UtcNow.ToUnixTimeSeconds()); //care for the Y2K38 bug
+            start_time = (Int32)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            bw.Write(start_time); //care for the Y2K38 bug
+        }
+
+        public void writeHit(String name, int hit) {
+            writeHit(player_indices[name], hit);
         }
 
         public void writeHit(int playerIndex, int hit) {
@@ -48,14 +54,16 @@ namespace mhw_dps_wpf {
         }
 
         public void writeBottomAndClose(PlayerList playerList) {
-            writeMarker(Marker.FileEnd);
+            writeMarker(Marker.LogEnd);
             int len = playerList.getPlayerNumber();
             for (int i = 0; i < len; i++) {
                 writeMarker(Marker.PlayerDamage);
+                bw.Write((UInt16)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() - start_time)); // time
                 bw.Write((UInt16)i); // player index
                 bw.Write((UInt32)playerList[i].damage); // player damage
+                
             }
-            
+            writeMarker(Marker.FileEnd);
             bw.Flush();
             fs.Flush();
             fs.Close();
@@ -106,7 +114,7 @@ namespace mhw_dps_wpf {
         private void ensurePathExists() {
             if (!Directory.Exists(getSavePath())) {
                 System.IO.Directory.CreateDirectory(getSavePath());
-                Console.WriteLine("Path created");
+                Console.WriteLine("Log path (" + getSavePath() + ")created");
             }
         }
 

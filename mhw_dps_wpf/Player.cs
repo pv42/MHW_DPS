@@ -23,8 +23,10 @@ namespace mhw_dps_wpf {
                     init();
                 }
                 if (_damage != value && initialized && !name.Equals("")) {
-                    _window.log(name + " hit for " + (value - _damage));
-                    hitlist.AddFirst(new Hit(value - _damage, time()));
+                    Hit hit = new Hit(value - _damage, time());
+                    _window.log(name + " hit for " + hit.damage);
+                    _window.logFile.writeHit(name, hit.damage);
+                    hitlist.AddFirst(hit);
                 }
                 _damage = value;
             }
@@ -122,6 +124,10 @@ namespace mhw_dps_wpf {
             _tracks = 0;
             Console.WriteLine("Reseted player " + name);
             _window.log("reseted player " + name);
+            if(_window.logFile == null) {
+                _window.logFile = new LogFile();
+                _window.logFile.writeHead(_window.players);
+            }
 
         }
 
