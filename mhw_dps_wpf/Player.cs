@@ -4,7 +4,22 @@ using System.Collections.Generic;
 
 namespace mhw_dps_wpf {
     public class Player {
-        public string name { get; set; }
+        bool _valid;
+        string _name;
+        public bool isValid {
+            get {
+                return _valid;
+            }
+        }
+        public string name {
+            get {
+                return _name;
+            }
+            set {
+                _name = value;
+                _valid = (_name.Length > 0); 
+            }
+        }
         int _damage;
         int _slingers;
         int _parts_broken;
@@ -147,6 +162,17 @@ namespace mhw_dps_wpf {
             }
             //Console.WriteLine("dmg " + dmg + " i" + i + " dt" + (time() - last.time));
             return ((double)dmg) / (time() - last.time + 1);
+        }
+        
+        public void update(int global_index) {
+            name = mhw.get_team_player_name(global_index);
+            if (!isValid) return;
+            int [] data = mhw.get_player_data(global_index);
+            damage = data[(int)player_data_indices.damages];
+            slingers = data[(int)player_data_indices.slingers];
+            monsters_located = data[(int)player_data_indices.located];
+            parts_broken = data[(int)player_data_indices.parts];
+            tracks_collected = data[(int)player_data_indices.tracks];
         }
 
     }

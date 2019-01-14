@@ -74,41 +74,23 @@ namespace mhw_dps_wpf {
 				Application.Current.Shutdown();
 			}
 			if (init_finished) {
-                int[][] data  = mhw.get_team_data();
-                int[] playerDamages = data[(int)player_data_indices.damages];
-                int[] playerSlingers = data[(int)player_data_indices.slingers];
-                int[] playerTracks = data[(int)player_data_indices.tracks];
-                int[] playerLocates = data[(int)player_data_indices.located];
-                int[] playerPartsBroken = data[(int)player_data_indices.parts];
-                string[] playerNames = mhw.get_team_player_names();
-				int playerSeatID = mhw.get_player_seat_id();
-                bool isValid = playerDamages.Sum() != 0 && playerSeatID >= 0 && playerNames[0] != "";
-				bool flag2 = false;
-				for (int i = 0; i < 4; i++) {
-					flag2 |= (players[i].damage != playerDamages[i] && playerDamages[i] > 0);
-                    flag2 |= (players[i].slingers != playerSlingers[i] && playerSlingers[i] > 0);
-                    flag2 |= (players[i].parts_broken != playerPartsBroken[i] && playerPartsBroken[i] > 0);
-                    flag2 |= (players[i].tracks_collected != playerTracks[i] && playerTracks[i] > 0);
-                    flag2 |= (players[i].monsters_located != playerLocates[i] && playerLocates[i] > 0);
-                    flag2 |= (players[i].name != playerNames[i] && playerNames[i] != "");
-				}
-                if (isValid && flag2) {
-                    for (int i = 0; i < 4; i++) {
-                        players[i].name = playerNames[i];
-                        players[i].damage = playerDamages[i];
-                        players[i].slingers = playerSlingers[i];
-                        players[i].parts_broken = playerPartsBroken[i];
-                        players[i].monsters_located = playerLocates[i];
-                        players[i].tracks_collected = playerTracks[i];
-                    }
+                int playerSeatID = mhw.get_player_seat_id();
+                bool isValid = playerSeatID >= 0; 
+                if (isValid) {
+                    players.update();
 					my_seat_id = playerSeatID;
-					update_info(my_seat_id < 0);
-                    questEnded = false;
+                    if (players[0].isValid) {
+                        update_info(my_seat_id < 0);
+                        questEnded = false;
+                    }
 				} else if (playerSeatID == -1 && my_seat_id != -5) {
                     if(!questEnded) {
                         log("Quest ended");
                         log("-----------");
                         logFile.writeBottomAndClose(players);
+                        logFile = null;
+                        // todo reset player list
+                        players = new PlayerList(this);
                     }
                     questEnded = true;
                     update_info(quest_end: true);

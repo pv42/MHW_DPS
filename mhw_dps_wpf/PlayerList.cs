@@ -6,25 +6,26 @@ using System.Threading.Tasks;
 
 namespace mhw_dps_wpf {
     public class PlayerList {
-        private Player[] array = new Player[4];
+        private Player[] players = new Player[4];
 
         public Player this[int i] {
             get {
-                return array[i];
+                return players[i];
             }
         }
 
         public PlayerList(MainWindow window) {
             for (int i = 0; i < 4; i++) {
-                array[i] = new Player(1, window);
-                array[i].name = "";
+                players[i] = new Player(1, window);
+                players[i].name = "";
             }
         }
 
         public int totalDamage() {
             int sum = 0;
-            for(int i = 0; i < 4; i++) {
-                sum += array[i].damage;
+            foreach(Player player in players) {
+                if(!player.isValid)
+                sum += player.damage;
             }
             return sum;
         }
@@ -32,7 +33,7 @@ namespace mhw_dps_wpf {
         public int maxDamage() {
             int max = Int32.MinValue;
             for (int i = 0; i < 4; i++) {
-                max = max < array[i].damage ? array[i].damage : max;
+                max = max < players[i].damage ? players[i].damage : max;
             }
             return max;
         }
@@ -40,9 +41,15 @@ namespace mhw_dps_wpf {
         public int getPlayerNumber() {
             int num = 0; 
             for(int i = 0; i < 4 ; i++) {
-                if (!(array[i].name == "")) num++;
+                if (!(players[i].name == "")) num++;
             }
             return num;
+        }
+
+        public void update() {
+            for(int i = 0; i < 4; i++) {
+                this[i].update(i);
+            }
         }
     }
 }

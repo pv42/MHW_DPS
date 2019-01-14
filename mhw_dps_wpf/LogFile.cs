@@ -5,7 +5,8 @@ using System.Collections.Generic;
 namespace mhw_dps_wpf {
     public class LogFile {
         const String PATH_SEPERATOR = "\\";
-        public const UInt16 FILE_VERSION = 3;
+        public const UInt16 FILE_VERSION = 5;
+
         private FileStream fs;
         private BinaryWriter bw;
         private Int32 start_time;
@@ -25,25 +26,28 @@ namespace mhw_dps_wpf {
             bw.Write('L');
             bw.Write(FILE_VERSION);
             int len = playerList.getPlayerNumber();
-            int headSize = 2 + 6; // playerlist marker + timestamp
-            for (int i = 0; i < len; i++) {
+            int headSize = 2 + 2 + 6; // len + UT marker + timestamp
+            /*for (int i = 0; i < len; i++) {
                 headSize += 4; // marker + index
                 headSize += playerList[i].name.Length + 1; // player name including size prefix
-                player_indices.Add(playerList[i].name, i);
-            }
+                if (player_indices.ContainsKey(playerList[i].name)) {
+                    Console.WriteLine("PlayerDuplicate name=" + playerList[i].name);
+                } else {
+                    player_indices.Add(playerList[i].name, i);
+                }
+            }*/
             bw.Write((UInt32)headSize); // head size
-            writeMarker(Marker.PlayerList);
-            for (int i = 0; i < len; i++) {
-                writeMarker(Marker.PlayerIndex);
-                bw.Write((UInt16)i); // player index
-                bw.Write(playerList[i].name); // player name including size prefix
-            }
             writeMarker(Marker.UnixTime);
             start_time = (Int32)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             bw.Write(start_time); //care for the Y2K38 bug
+            bw.Flush();
         }
 
         public void writeHit(String name, int hit) {
+            if (!player_indices.ContainsKey(name)) {
+                Console.WriteLine("new player found");
+                player_indices.Add(name, player_indices.Count);
+            }
             writeHit(player_indices[name], hit);
         }
 
@@ -57,11 +61,16 @@ namespace mhw_dps_wpf {
         public void writeBottomAndClose(PlayerList playerList) {
             writeMarker(Marker.LogEnd);
             int len = playerList.getPlayerNumber();
+            writeMarker(Marker.PlayerList);
+            for (int i = 0; i < len; i++) {
+                writeMarker(Marker.PlayerIndex);
+                bw.Write((UInt16)i); // player index
+                bw.Write(playerList[i].name); // player name including size prefix
+            }
             for (int i = 0; i < len; i++) {
                 writeMarker(Marker.PlayerDamage);
                 bw.Write((UInt16)i); // player index
-                bw.Write((UInt32)playerList[i].damage); // player damage
-                
+                bw.Write((UInt32)playerList[i].damage); // player damage 
             }
             writeMarker(Marker.FileEnd);
             bw.Flush();

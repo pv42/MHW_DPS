@@ -161,6 +161,10 @@ public static class mhw {
             (byte)195
     };
 
+    private static ulong STEP1_UPR = 0x1400FFFFFL;
+    private static ulong STEP2_LWR = 0x140004000L;
+    private static ulong STEP2_UPR = 0x150000000L; 
+
     public static bool is_wegame_build = false;
 
     public static long loc1 = -1L;
@@ -191,6 +195,7 @@ public static class mhw {
         }
     }
 
+    // checks the processes memory structure and loads gets adresses 
     public static void initMemory() {
         find_game_proc();
         mhw.is_wegame_build = game.MainWindowTitle.Contains("怪物猎人 世界"); // Monster hunter world
@@ -198,22 +203,31 @@ public static class mhw {
         if (!mhw.is_wegame_build) {
             Console.WriteLine("main module base adress 0x" + game.MainModule.BaseAddress.ToString("X"));
             List<byte?[]> patterns = new List<byte?[]> {
-                    pattern_1,
-                    pattern_2,
-                    pattern_3,
-                    pattern_4
-                };
+                pattern_1,
+                pattern_2,
+                pattern_3,
+                pattern_4
+            };
             ulong[] array = memory.find_patterns(game, (IntPtr)0x140004000L, (IntPtr)0x145000000L, patterns);
-            mhw_dps_wpf.MainWindow.assert(array[0] > 0x1400FFFFFL && array[1] > 0x1400FFFFFL && array[1] > 0x1400FFFFFL && array[3] > 0x1400FFFFFL, "failed to locate offsets (step 1).");
-            ulong num = array[0] + mhw.read_uint(game.Handle, (IntPtr)(long)(array[0] + 2)) + 6;
-            ulong num2 = array[1] + 51 + mhw.read_uint(game.Handle, (IntPtr)(long)(array[1] + 54)) + 7;
+            bool step1_flag = true;
+            for(int i = 1; i < 4; i++) {
+                step1_flag = step1_flag &&(array[i] > STEP1_UPR);
+            }
+            mhw_dps_wpf.MainWindow.assert(step1_flag, "failed to locate offsets (step 1).");
+            ulong num  = array[0] +      mhw.read_uint(game.Handle, (IntPtr)(long)(array[0] + 2     )) + 6;
+            ulong num2 = array[1] + 51 + mhw.read_uint(game.Handle, (IntPtr)(long)(array[1] + 54    )) + 7;
             ulong num3 = array[2] + 15 + mhw.read_uint(game.Handle, (IntPtr)(long)(array[2] + 15 + 2)) + 6;
-            ulong num4 = array[3] + mhw.read_uint(game.Handle, (IntPtr)(long)(array[3] + 3)) + 7;
+            ulong num4 = array[3] +      mhw.read_uint(game.Handle, (IntPtr)(long)(array[3] + 3     )) + 7;
             Console.WriteLine("loc1              0x" + num.ToString("X"));
             Console.WriteLine("dmg base adress 0 0x" + num2.ToString("X"));
             Console.WriteLine("dmg base adress 1 0x" + num3.ToString("X"));
             Console.WriteLine("names base adress 0x" + num4.ToString("X"));
-            mhw_dps_wpf.MainWindow.assert(num > 5368725504L && num < 5637144576L && num2 > 5368725504L && num2 < 5637144576L && num3 > 5368725504L && num3 < 5637144576L && num4 > 5368725504L && num4 < 5637144576L, "failed to locate offsets (step 2).");
+            mhw_dps_wpf.MainWindow.assert(
+                num  > STEP2_LWR && num  < STEP2_UPR &&
+                num2 > STEP2_LWR && num2 < STEP2_UPR &&
+                num3 > STEP2_LWR && num3 < STEP2_UPR &&
+                num4 > STEP2_LWR && num4 < STEP2_UPR,
+                "failed to locate offsets (step 2).");
             mhw.loc1 = (long)num;
             mhw.damage_base_loc0 = (long)num2;
             mhw.damage_base_loc1 = (long)num3;
@@ -229,23 +243,27 @@ public static class mhw {
         }
     }
 
+    // reads a bytearray from a process at a given address, the lenght is the lenght of the buffer given to write to
     private static bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer) {
         int lpNumberOfBytesRead = 0;
         return ReadProcessMemory(hProcess, lpBaseAddress, lpBuffer, lpBuffer.Length, ref lpNumberOfBytesRead);
     }
 
+    // reads an uint64 from a process at a given address
     public static ulong read_ulong(IntPtr hProcess, IntPtr lpBaseAddress) {
         byte[] array = new byte[8];
         ReadProcessMemory(hProcess, lpBaseAddress, array);
         return BitConverter.ToUInt64(array, 0);
     }
 
+    // reads an uint32 from a process at a given address
     public static uint read_uint(IntPtr hProcess, IntPtr lpBaseAddress) {
-        byte[] array = new byte[4];
-        ReadProcessMemory(hProcess, lpBaseAddress, array);
-        return BitConverter.ToUInt32(array, 0);
+        byte[] data = new byte[4];
+        ReadProcessMemory(hProcess, lpBaseAddress, data);
+        return BitConverter.ToUInt32(data, 0);
     }
 
+    // converts a 4 byte array to an int with big endian byte order
     public static int dword_to_int(ref byte[] array) {
         return array[0] + (array[1] << 0x8) + (array[2] << 0x10) + (array[3] << 0x18);
     }
@@ -261,11 +279,17 @@ public static class mhw {
     public static int[][] get_team_data() {
         Process proc = game;
         int[][] data = new int[5][];
-        data[(int)player_data_indices.damages] = new int[4]; // damage
+        //TODO fix this
+        for(int i = 0; i < 4; i++) {
+            data[i] = new int[5];
+        }
+        return data;
+
+        data[(int)player_data_indices.damages] = new int[4];  // damage
         data[(int)player_data_indices.slingers] = new int[4]; // slingers
-        data[(int)player_data_indices.located] = new int[4]; // monsters located
-        data[(int)player_data_indices.parts] = new int[4]; // parts
-        data[(int)player_data_indices.tracks] = new int[4]; // tracks
+        data[(int)player_data_indices.located] = new int[4];  // monsters located
+        data[(int)player_data_indices.parts] = new int[4];    // parts
+        data[(int)player_data_indices.tracks] = new int[4];   // tracks
         byte[] mem_uint32 = new byte[4];
         byte[] mem_uint64 = new byte[8];
         ReadProcessMemory(proc.Handle, (IntPtr)damage_base_loc0, mem_uint64);
@@ -280,23 +304,54 @@ public static class mhw {
                 ReadProcessMemory(proc.Handle, (IntPtr)(long)(num2 + 0x48), mem_uint64);
                 ulong num3 = BitConverter.ToUInt64(mem_uint64, 0);
                 if (num3 != 0) {
-                    read_data_set(num3, mem_uint32, data, 0, player_data_indices.damages, i);
-                    read_data_set(num3, mem_uint32, data, 0x28, player_data_indices.parts, i);
-                    read_data_set(num3, mem_uint32, data, 0x48, player_data_indices.located, i);
-                    read_data_set(num3, mem_uint32, data, 0x54, player_data_indices.tracks, i);
-                    read_data_set(num3, mem_uint32, data, 0x58, player_data_indices.slingers, i);
+                    read_data_set(num3, mem_uint32, data[i], 0, player_data_indices.damages);
+                    read_data_set(num3, mem_uint32, data[i], 0x28, player_data_indices.parts);
+                    read_data_set(num3, mem_uint32, data[i], 0x48, player_data_indices.located);
+                    read_data_set(num3, mem_uint32, data[i], 0x54, player_data_indices.tracks);
+                    read_data_set(num3, mem_uint32, data[i], 0x58, player_data_indices.slingers);
                 }
             }
         }
         return data;
     }
 
-    private static void read_data_set(ulong num3, byte[] mem_uint32, int[][] data, ulong address_offset, player_data_indices data_index, int player_index) {
+    public static int[] get_player_data(int index) {
+        Process proc = game;
+        int[] data = new int[5];
+        // damage
+        // slingers
+        // monsters located
+        // parts
+        // tracks
+        byte[] mem_uint32 = new byte[4];
+        byte[] mem_uint64 = new byte[8];
+        ReadProcessMemory(proc.Handle, (IntPtr)damage_base_loc0, mem_uint64);
+        ulong num = BitConverter.ToUInt64(mem_uint64, 0) + 0x66B0;
+        ReadProcessMemory(proc.Handle, (IntPtr)damage_base_loc1, mem_uint64);
+        ulong rcx = BitConverter.ToUInt64(mem_uint64, 0);
+        ReadProcessMemory(proc.Handle, (IntPtr)((long)num + 4L * (long)index), mem_uint32);
+        uint edx = read_uint(proc.Handle, (IntPtr)((long)num + 4L * (long)index));
+        ulong num2 = asm_func1(proc, rcx, edx);
+        if (num2 != 0) {
+            ReadProcessMemory(proc.Handle, (IntPtr)(long)(num2 + 0x48), mem_uint64);
+            ulong num3 = BitConverter.ToUInt64(mem_uint64, 0);
+            if (num3 != 0) {
+                read_data_set(num3, mem_uint32, data, 0, player_data_indices.damages);
+                read_data_set(num3, mem_uint32, data, 0x28, player_data_indices.parts);
+                read_data_set(num3, mem_uint32, data, 0x48, player_data_indices.located);
+                read_data_set(num3, mem_uint32, data, 0x54, player_data_indices.tracks);
+                read_data_set(num3, mem_uint32, data, 0x58, player_data_indices.slingers);
+            }
+        }
+        return data;
+    }
+
+    private static void read_data_set(ulong num3, byte[] mem_uint32, int[] data, ulong address_offset, player_data_indices data_index) {
         Process proc = game;
         bool num4 = ReadProcessMemory(proc.Handle, (IntPtr)(long)(num3 + 0x48 + address_offset), mem_uint32);
         int player_data = dword_to_int(ref mem_uint32);
         if (num4 && player_data >= 0 && player_data <= 0xFFFFF) {
-            data[(int)data_index][player_index] = player_data;
+            data[(int)data_index] = player_data;
         }
     }
 
@@ -336,17 +391,17 @@ public static class mhw {
             info.maxhp = BitConverter.ToSingle(mem_float, 0);
             ReadProcessMemory(proc.Handle, (IntPtr)of5 + 0x64, mem_float);
             info.hp = BitConverter.ToSingle(mem_float, 0);
-
         }
         return info;
     }
 
     public struct MonsterInfo {
-        bool isValid;
+        
         public float hp;
         public float maxhp;
     }
 
+    //legacy
     public static string[] get_team_player_names() {
         string[] names = new string[4];
         byte[] mem_name_string = new byte[0x28];
@@ -355,7 +410,7 @@ public static class mhw {
             Array.Resize(ref mem_name_string, 0x28);
             ReadProcessMemory(game.Handle, (IntPtr)(num + 0x21 * i), mem_name_string);
             int name_len = Array.FindIndex(mem_name_string, (byte x) => x == 0);
-            if (name_len == 0 || name_len == -1) {
+            if (name_len <= 0) {
                 names[i] = "";
             } else {
                 Array.Resize(ref mem_name_string, name_len);
@@ -363,6 +418,22 @@ public static class mhw {
             }
         }
         return names;
+    }
+
+    public static string get_team_player_name(int index) {
+        string name;
+        byte[] mem_name_string = new byte[0x28];
+        int num = (int)read_uint(game.Handle, (IntPtr)names_base_adress) + (is_wegame_build ? 0x555B5 : 0x54A45);
+        Array.Resize(ref mem_name_string, 0x28);
+        ReadProcessMemory(game.Handle, (IntPtr)(num + 0x21 * index), mem_name_string);
+        int name_len = Array.FindIndex(mem_name_string, (byte x) => x == 0);
+        if (name_len <= 0) {
+            name = "";
+        } else {
+            Array.Resize(ref mem_name_string, name_len);
+            name = Encoding.UTF8.GetString(mem_name_string);
+        }
+        return name;
     }
 
     public static bool hasGameExited() {

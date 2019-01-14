@@ -27,73 +27,76 @@ public static class memory {
 		return ReadProcessMemory(hProcess, lpBaseAddress, lpBuffer, lpBuffer.Length, ref lpNumberOfBytesRead);
 	}
 
+    // find a pattern in a byte array, returns a list of all matches start indices 
 	private static List<int> byte_find(byte[] src, byte[] pattern) {
 		List<int> list = new List<int>();
 		if (src.Length < pattern.Length) {
 			return list;
 		}
-		for (int i = 0; i < src.Length - pattern.Length + 1; i++)
-		{
+		for (int i = 0; i < src.Length - pattern.Length + 1; i++) {
 			bool flag = true;
-			for (int j = 0; j < pattern.Length; j++)
-			{
-				if (src[i + j] != pattern[j])
-				{
+			for (int j = 0; j < pattern.Length; j++) {
+				if (src[i + j] != pattern[j]) {
 					flag = false;
+                    break;
 				}
 			}
-			if (flag)
-			{
+			if (flag) {
 				list.Add(i);
 			}
 		}
 		return list;
 	}
 
-	private static int byte_find_first(byte[] src, byte?[] pattern)	{
+
+    // find a pattern in a byte array, returns the first matchs start index or -1 of no match was found
+    private static int byte_find_first(byte[] src, byte?[] pattern)	{
 		new List<int>();
 		if (src.Length < pattern.Length){
 			return -1;
 		}
-		for (int i = 0; i < src.Length - pattern.Length + 1; i++)
-		{
+		for (int i = 0; i < src.Length - pattern.Length + 1; i++) {
 			bool flag = true;
-			for (int j = 0; j < pattern.Length; j++)
-			{
-				if (pattern[j].HasValue && src[i + j] != pattern[j])
-				{
+			for (int j = 0; j < pattern.Length; j++) {
+				if (pattern[j].HasValue && src[i + j] != pattern[j]) {
 					flag = false;
 				}
 			}
-			if (flag)
-			{
+			if (flag) {
 				return i;
 			}
 		}
 		return -1;
 	}
 
+    /**
+     * finds memory patterns in a process 
+     * @param proc        process handle of the process to search
+     * @param start_from  lower search boundary address
+     * @param end_at      upper search boundary address
+     * @param patters     patterns to search for
+     * @return array of found patters addressses
+     */
 	public static ulong[] find_patterns(Process proc, IntPtr start_from, IntPtr end_at, List<byte?[]> patterns) {
 		IntPtr intPtr = start_from;
-		ulong[] array = new ulong[patterns.Count];
-		int num = patterns.Count;
+		ulong[] results = new ulong[patterns.Count];
+		int remaining_not_found = patterns.Count;
 		do {
 			if (VirtualQueryEx(proc.Handle, intPtr, out MEMORY_BASIC_INFORMATION64 lpBuffer, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION64))) > 0 && lpBuffer.RegionSize != 0) {
-				byte[] array2 = new byte[(uint)lpBuffer.RegionSize];
-				ReadProcessMemory(proc.Handle, (IntPtr)(long)lpBuffer.BaseAddress, array2);
+				byte[] memory = new byte[(uint)lpBuffer.RegionSize];
+				ReadProcessMemory(proc.Handle, (IntPtr)(long)lpBuffer.BaseAddress, memory);
 				for (int i = 0; i < patterns.Count; i++) {
-					if (array[i] == 0) {
-						int num2 = byte_find_first(array2, patterns[i]);
-						if (num2 > 0) {
-							array[i] = lpBuffer.BaseAddress + (uint)num2;
-							num--;
+					if (results[i] == 0) {
+						int match = byte_find_first(memory, patterns[i]);
+						if (match > 0) {
+							results[i] = lpBuffer.BaseAddress + (uint)match;
+							remaining_not_found--;
 						}
 					}
 				}
 			}
 			intPtr = (IntPtr)(long)(lpBuffer.BaseAddress + lpBuffer.RegionSize);
-		}
-		while ((ulong)(long)intPtr < (ulong)(long)end_at && num > 0);
-		return array;
+		} while ((ulong)(long)intPtr < (ulong)(long)end_at && remaining_not_found > 0);
+		return results;
 	}
 }
