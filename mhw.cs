@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 public static class mhw {
+
+    // [5392952400, 5376615413, 5391770352, 5371118641]
     private static byte?[] pattern_1 = new byte?[26]
         {
             (byte)139,
@@ -35,7 +37,15 @@ public static class mhw {
             (byte)234,
             (byte)16
         };
-    private static byte?[] pattern_2 = new byte?[58]
+    private static byte?[] pattern_2 = new byte?[6]{
+        (byte)72,
+        (byte)137,
+        (byte)116,
+        (byte)36,
+        (byte)56,
+        (byte)139,// 115 44 76 139 144 128 131 0 0 131
+    };
+    /*new byte?[58]
     {
             (byte)72,
             (byte)137,
@@ -95,7 +105,7 @@ public static class mhw {
             null,
             null,
             null
-    };
+    };*/
     private static byte?[] pattern_3 = new byte?[21]
     {
             (byte)178,
@@ -210,8 +220,9 @@ public static class mhw {
             };
             ulong[] array = memory.find_patterns(game, (IntPtr)0x140004000L, (IntPtr)0x145000000L, patterns);
             bool step1_flag = true;
-            for(int i = 1; i < 4; i++) {
+            for(int i = 0; i < 4; i++) {
                 step1_flag = step1_flag &&(array[i] > STEP1_UPR);
+                Console.WriteLine("FLAG 1 STEP " + i + " VALUE " + array[i]);
             }
             mhw_dps_wpf.MainWindow.assert(step1_flag, "failed to locate offsets (step 1).");
             ulong num  = array[0] +      mhw.read_uint(game.Handle, (IntPtr)(long)(array[0] + 2     )) + 6;
