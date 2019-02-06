@@ -1,13 +1,6 @@
 using System;
-using System.CodeDom.Compiler;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
@@ -21,6 +14,7 @@ namespace mhw_dps_wpf {
 		private DispatcherTimer dispatcherTimer = new DispatcherTimer();
 
         public PlayerList players;
+        public Monster[] monsters = new Monster[3];
 
 		private int my_seat_id = -5;
 
@@ -34,8 +28,7 @@ namespace mhw_dps_wpf {
         private bool questEnded = false;
         
 
-		private static Color[] player_colors = new Color[4]
-		{
+		private static Color[] player_colors = new Color[4]{
 			Color.FromRgb(225, 65, 55),
 			Color.FromRgb(53, 136, 227),
 			Color.FromRgb(196, 172, 44),
@@ -78,6 +71,10 @@ namespace mhw_dps_wpf {
                 bool isValid = playerSeatID >= 0; 
                 if (isValid) {
                     players.update();
+                    for(int i = 0; i < 3; i++) {
+                        mhw.MonsterInfo info = mhw.getMonsterInfo(i);
+                        if(info.maxhp > 0) Console.WriteLine(i + ": " + info.hp + "/" + info.maxhp);
+                    }
 					my_seat_id = playerSeatID;
                     if (players[0].isValid) {
                         update_info(my_seat_id < 0);
@@ -101,23 +98,24 @@ namespace mhw_dps_wpf {
 		private void update_info(bool quest_end){
 		    if (init_finished) {
                 int totalDamage = players.totalDamage();
-				
 				for (int i = 0; i < 4; i++) {
-                    if(players[i].name == "") {
+                    if(!players[i].isValid) {
                         player_name_tbs[i].Visibility = Visibility.Collapsed;
                         player_dmg_tbs[i].Visibility = Visibility.Collapsed;
                         player_dps_tbs[i].Visibility = Visibility.Collapsed;
                         damage_bar_rects[i].Visibility = Visibility.Collapsed;
+                        player_dmg_tbs[i].Text = "";
+                        player_dps_tbs[i].Text = "";
                     } else {
                         player_name_tbs[i].Visibility = Visibility.Visible;
                         player_dmg_tbs[i].Visibility = Visibility.Visible;
                         player_dps_tbs[i].Visibility = Visibility.Visible;
                         damage_bar_rects[i].Visibility = Visibility.Visible;
                         player_name_tbs[i].Text = players[i].name;
-					    player_dmg_tbs[i].Text = ((players[i].name == "") ? "" : (players[i].damage.ToString() + " (" + ((float)players[i].damage / (float)totalDamage * 100f).ToString("0.0") + "%)"));
+					    player_dmg_tbs[i].Text =  players[i].damage.ToString() + " (" + ((float)players[i].damage / (float)totalDamage * 100f).ToString("0.0") + "%)";
                         player_dps_tbs[i].Text = players[i].getLastDPS(1800).ToString("0.00") + "/s";
                         if (totalDamage == 0) {
-                            damage_bar_rects[i].Width = 0.0;
+                            damage_bar_rects[i].Width = front_canvas.ActualWidth;
                         } else {
                             damage_bar_rects[i].Width = (double)players[i].damage / (double)players.maxDamage() * front_canvas.ActualWidth;
                             if (i == my_seat_id) {

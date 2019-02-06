@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace mhw_dps_wpf {
@@ -174,8 +173,8 @@ namespace mhw_dps_wpf {
             parts_broken = data[(int)player_data_indices.parts];
             tracks_collected = data[(int)player_data_indices.tracks];
         }
-
     }
+
     class Hit {
         public int damage;
         public double time;

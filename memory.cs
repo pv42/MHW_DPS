@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 
 public static class memory {
 	public struct MEMORY_BASIC_INFORMATION64 {
@@ -16,16 +17,15 @@ public static class memory {
 		public int __alignment2;
 	}
 
-	[DllImport("kernel32.dll")]
+    private static byte[] mem_8B = new byte[8];
+    private static byte[] mem_4B = new byte[4];
+
+    [DllImport("kernel32.dll")]
 	private static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION64 lpBuffer, uint dwLength);
 
 	[DllImport("kernel32.dll")]
 	public static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
 
-	public static bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer) {
-		int lpNumberOfBytesRead = 0;
-		return ReadProcessMemory(hProcess, lpBaseAddress, lpBuffer, lpBuffer.Length, ref lpNumberOfBytesRead);
-	}
 
     // find a pattern in a byte array, returns a list of all matches start indices 
 	private static List<int> byte_find(byte[] src, byte[] pattern) {
@@ -84,7 +84,7 @@ public static class memory {
 		do {
 			if (VirtualQueryEx(proc.Handle, intPtr, out MEMORY_BASIC_INFORMATION64 lpBuffer, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION64))) > 0 && lpBuffer.RegionSize != 0) {
 				byte[] memory = new byte[(uint)lpBuffer.RegionSize];
-				ReadProcessMemory(proc.Handle, (IntPtr)(long)lpBuffer.BaseAddress, memory);
+				read_bytes(proc.Handle, (IntPtr)(long)lpBuffer.BaseAddress, memory);
 				for (int i = 0; i < patterns.Count; i++) {
 					if (results[i] == 0) {
 						int match = byte_find_first(memory, patterns[i]);
@@ -99,4 +99,49 @@ public static class memory {
 		} while ((ulong)(long)intPtr < (ulong)(long)end_at && remaining_not_found > 0);
 		return results;
 	}
+
+    // reads a bytearray from a process at a given address, the lenght is the lenght of the buffer given to write to
+    public static bool read_bytes(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer) {
+        int lpNumberOfBytesRead = 0;
+        return ReadProcessMemory(hProcess, lpBaseAddress, lpBuffer, lpBuffer.Length, ref lpNumberOfBytesRead);
+    }
+
+    // reads an uint64 from a process at a given address
+    public static ulong read_ulong(IntPtr hProcess, IntPtr lpBaseAddress) {
+        read_bytes(hProcess, lpBaseAddress, mem_8B);
+        return BitConverter.ToUInt64(mem_8B, 0);
+    }
+
+    // reads an uint64 from a process at a given address
+    public static long read_long(IntPtr hProcess, IntPtr lpBaseAddress) {
+        read_bytes(hProcess, lpBaseAddress, mem_8B);
+        return BitConverter.ToInt64(mem_8B, 0);
+    }
+
+    // reads an uint32 from a process at a given address
+    public static uint read_uint(IntPtr hProcess, IntPtr lpBaseAddress) {
+        read_bytes(hProcess, lpBaseAddress, mem_4B);
+        return BitConverter.ToUInt32(mem_4B, 0);
+    }
+
+    // reads a float (or single) from a process at a given address
+    public static float read_float(IntPtr hProcess, IntPtr lpBaseAddress) {
+        read_bytes(hProcess, lpBaseAddress, mem_4B);
+        return BitConverter.ToSingle(mem_4B, 0);
+    }
+
+    // read a null terminated string from a process at a given address
+    public static string read_string(IntPtr hProcess, IntPtr lpBaseAddress, uint max_lengh) {
+        string str;
+        byte[] mem = new byte[max_lengh];
+        memory.read_bytes(hProcess, lpBaseAddress, mem);
+        int str_len = Array.FindIndex(mem, (byte x) => x == 0); // find '\0' String terminator
+        if (str_len <= 0) {
+            str = "";
+        } else {
+            Array.Resize(ref mem, str_len);
+            str = Encoding.UTF8.GetString(mem);
+        }
+        return str;
+    }
 }

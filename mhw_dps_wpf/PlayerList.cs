@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace mhw_dps_wpf {
     public class PlayerList {
@@ -16,7 +12,7 @@ namespace mhw_dps_wpf {
 
         public PlayerList(MainWindow window) {
             for (int i = 0; i < 4; i++) {
-                players[i] = new Player(1, window);
+                players[i] = new Player(0, window);
                 players[i].name = "";
             }
         }
@@ -24,8 +20,9 @@ namespace mhw_dps_wpf {
         public int totalDamage() {
             int sum = 0;
             foreach(Player player in players) {
-                if(!player.isValid)
-                sum += player.damage;
+                if (player.isValid) {
+                    sum += player.damage;
+                }
             }
             return sum;
         }
@@ -41,7 +38,7 @@ namespace mhw_dps_wpf {
         public int getPlayerNumber() {
             int num = 0; 
             for(int i = 0; i < 4 ; i++) {
-                if (!(players[i].name == "")) num++;
+                if (players[i].isValid) num++;
             }
             return num;
         }
