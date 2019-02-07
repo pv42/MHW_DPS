@@ -58,6 +58,19 @@ namespace mhw_dps_wpf {
             bw.Write((UInt32)hit); 
         }
 
+        public void writeMonsterHP(int monsterIndex, float hp) {
+            writeMarker(Marker.MonsterHP);
+            bw.Write((UInt16)monsterIndex);
+            bw.Write((float)hp);
+        }
+
+        public void writeMonsterInfo(int monsterIndex, string name, float max_hp) {
+            writeMarker(Marker.MonsterInfo);
+            bw.Write((UInt16)monsterIndex);
+            bw.Write(name);
+            bw.Write((float)max_hp);
+        }
+
         public void writeBottomAndClose(PlayerList playerList) {
             writeMarker(Marker.LogEnd);
             int len = playerList.getPlayerNumber();
@@ -108,6 +121,14 @@ namespace mhw_dps_wpf {
                     bw.Write('F');
                     bw.Write('E'); // marker for file end
                     break;
+                case Marker.MonsterHP:
+                    bw.Write('M');
+                    bw.Write('H'); // marker for monster current hp
+                    break;
+                case Marker.MonsterInfo:
+                    bw.Write('M');
+                    bw.Write('I'); // marker for monster current hp
+                    break;
                 default:
                     bw.Write('?');
                     bw.Write('?'); // maker for internal error
@@ -128,13 +149,15 @@ namespace mhw_dps_wpf {
         }
 
         public enum Marker {
-               PlayerList,
-               PlayerIndex,
-               UnixTime,
-               PlayerHit,
-               LogEnd,
-               PlayerDamage,
-               FileEnd
+            PlayerList,
+            PlayerIndex,
+            UnixTime,
+            PlayerHit,
+            LogEnd,
+            PlayerDamage,
+            FileEnd,
+            MonsterHP,
+            MonsterInfo
         }
     }
 }
