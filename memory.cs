@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-public static class memory {
+public static class MemoryHelper {
 	public struct MEMORY_BASIC_INFORMATION64 {
 		public ulong BaseAddress;
 		public ulong AllocationBase;
@@ -17,8 +17,8 @@ public static class memory {
 		public int __alignment2;
 	}
 
-    private static byte[] mem_8B = new byte[8];
-    private static byte[] mem_4B = new byte[4];
+    private static byte[] buffer64 = new byte[8];
+    private static byte[] buffer32 = new byte[4];
 
     [DllImport("kernel32.dll")]
 	private static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION64 lpBuffer, uint dwLength);
@@ -86,7 +86,7 @@ public static class memory {
 				byte[] memory = new byte[(uint)lpBuffer.RegionSize];
 				read_bytes(proc.Handle, (IntPtr)(long)lpBuffer.BaseAddress, memory);
 				for (int i = 0; i < patterns.Count; i++) {
-					if (results[i] == 0) {
+					if(results[i] == 0) {
 						int match = byte_find_first(memory, patterns[i]);
 						if (match > 0) {
 							results[i] = lpBuffer.BaseAddress + (uint)match;
@@ -107,34 +107,40 @@ public static class memory {
     }
 
     // reads an uint64 from a process at a given address
-    public static ulong read_ulong(IntPtr hProcess, IntPtr lpBaseAddress) {
-        read_bytes(hProcess, lpBaseAddress, mem_8B);
-        return BitConverter.ToUInt64(mem_8B, 0);
+    public static ulong read_ulong(IntPtr process, IntPtr lpBaseAddress) {
+        read_bytes(process, lpBaseAddress, buffer64);
+        return BitConverter.ToUInt64(buffer64, 0);
     }
 
     // reads an uint64 from a process at a given address
     public static long read_long(IntPtr hProcess, IntPtr lpBaseAddress) {
-        read_bytes(hProcess, lpBaseAddress, mem_8B);
-        return BitConverter.ToInt64(mem_8B, 0);
+        read_bytes(hProcess, lpBaseAddress, buffer64);
+        return BitConverter.ToInt64(buffer64, 0);
     }
 
     // reads an uint32 from a process at a given address
     public static uint read_uint(IntPtr hProcess, IntPtr lpBaseAddress) {
-        read_bytes(hProcess, lpBaseAddress, mem_4B);
-        return BitConverter.ToUInt32(mem_4B, 0);
+        read_bytes(hProcess, lpBaseAddress, buffer32);
+        return BitConverter.ToUInt32(buffer32, 0);
+    }
+
+    // reads an int32 from a process at a given address
+    public static int read_int(IntPtr hProcess, IntPtr lpBaseAddress) {
+        read_bytes(hProcess, lpBaseAddress, buffer32);
+        return BitConverter.ToInt32(buffer32, 0);
     }
 
     // reads a float (or single) from a process at a given address
     public static float read_float(IntPtr hProcess, IntPtr lpBaseAddress) {
-        read_bytes(hProcess, lpBaseAddress, mem_4B);
-        return BitConverter.ToSingle(mem_4B, 0);
+        read_bytes(hProcess, lpBaseAddress, buffer32);
+        return BitConverter.ToSingle(buffer32, 0);
     }
 
-    // read a null terminated string from a process at a given address
+    // read a null terminated string from a process at a given address with maxlengh (the null terminater must be in the max_lengh bytes)
     public static string read_string(IntPtr hProcess, IntPtr lpBaseAddress, uint max_lengh) {
         string str;
         byte[] mem = new byte[max_lengh];
-        memory.read_bytes(hProcess, lpBaseAddress, mem);
+        MemoryHelper.read_bytes(hProcess, lpBaseAddress, mem);
         int str_len = Array.FindIndex(mem, (byte x) => x == 0); // find '\0' String terminator
         if (str_len <= 0) {
             str = "";
@@ -142,6 +148,18 @@ public static class memory {
             Array.Resize(ref mem, str_len);
             str = Encoding.UTF8.GetString(mem);
         }
+        //Console.WriteLine("read from " + lpBaseAddress + " v=" + str);
         return str;
+    }
+
+
+    public static ulong read_pointer_chain(Process process, ulong address, params ulong[] offsets) {
+        ulong result = address;
+        foreach (ulong offset in offsets) {
+            ulong readResult = MemoryHelper.read_ulong(process.Handle, (IntPtr)address);
+            result = readResult + offset;
+            address = result;
+        }
+        return result;
     }
 }

@@ -1,4 +1,4 @@
-﻿
+﻿using System;
 using System.Collections.ObjectModel;
 
 namespace mhw_dps_wpf {
@@ -17,12 +17,20 @@ namespace mhw_dps_wpf {
         }
     }
     public class Monster {
-        public string name;
-        public int index;
-        public HealthInfo info;
-        public SizeCrown crown;
+        public string id;
+        //public int index;
+        public HealthInfo health;
+        //public SizeCrown crown;
         public float size;
-        public Collection<MonsterPart> parts;
+        //public Collection<MonsterPart> parts;
+        public Monster(string id, float max_hp, float c_hp, float size){
+            Console.WriteLine("id:" + id + " hp:" + c_hp + "/" + max_hp);
+            this.id = id;
+            this.health = new HealthInfo();
+            this.health.max_heath = max_hp;
+            this.health.health = c_hp;
+            this.size = size;
+        }
     }
 
     public class MonsterPart {

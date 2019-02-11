@@ -26,16 +26,7 @@ namespace mhw_dps_wpf {
             bw.Write('L');
             bw.Write(FILE_VERSION);
             int len = playerList.getPlayerNumber();
-            int headSize = 2 + 2 + 6; // len + UT marker + timestamp
-            /*for (int i = 0; i < len; i++) {
-                headSize += 4; // marker + index
-                headSize += playerList[i].name.Length + 1; // player name including size prefix
-                if (player_indices.ContainsKey(playerList[i].name)) {
-                    Console.WriteLine("PlayerDuplicate name=" + playerList[i].name);
-                } else {
-                    player_indices.Add(playerList[i].name, i);
-                }
-            }*/
+            int headSize = 2 + 2 + 6; 
             bw.Write((UInt32)headSize); // head size
             writeMarker(Marker.UnixTime);
             start_time = (Int32)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -103,7 +94,7 @@ namespace mhw_dps_wpf {
                     break;
                 case Marker.UnixTime:
                     bw.Write('U');
-                    bw.Write('T');
+                    bw.Write('T'); // marker for timestamp
                     break;
                 case Marker.PlayerHit:
                     bw.Write('P');
@@ -114,8 +105,8 @@ namespace mhw_dps_wpf {
                     bw.Write('E'); // marker for log end
                     break;
                 case Marker.PlayerDamage:
-                    bw.Write('P'); // marker for total dmg
-                    bw.Write('D');
+                    bw.Write('P');
+                    bw.Write('D'); // marker for total dmg
                     break;
                 case Marker.FileEnd:
                     bw.Write('F');

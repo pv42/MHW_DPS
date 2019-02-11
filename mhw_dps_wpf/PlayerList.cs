@@ -44,7 +44,7 @@ namespace mhw_dps_wpf {
         }
 
         public void update() {
-            for(int i = 0; i < 4; i++) {
+            for (int i = 0; i < 4; i++) {
                 this[i].update(i);
             }
         }

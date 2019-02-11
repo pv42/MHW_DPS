@@ -63,6 +63,7 @@
     <Compile Include="mhw_dps_wpf\Player.cs" />
     <Compile Include="mhw_dps_wpf\MainWindow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WindowsApi.cs" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="mainwindow.xaml" />

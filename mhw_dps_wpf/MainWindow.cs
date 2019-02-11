@@ -55,12 +55,12 @@ namespace mhw_dps_wpf {
 
 		public static void assert(bool flag, string reason = "", bool show_reason = true) {
 			if (!flag) {
-                Application.Current.Shutdown();
                 if (show_reason) {
 					MessageBox.Show("assertion failed: " + reason);
 				}
-			}
-		}
+                Application.Current.Shutdown();
+            }
+        }
 
 		private void update_tick(object sender, EventArgs e) {
 			if (mhw.hasGameExited()) {
@@ -71,10 +71,11 @@ namespace mhw_dps_wpf {
                 bool isValid = playerSeatID >= 0; 
                 if (isValid) {
                     players.update();
-                    for(int i = 0; i < 3; i++) {
-                        mhw.MonsterInfo info = mhw.getMonsterInfo(i);
-                        if(info.maxhp > 0) Console.WriteLine(i + ": " + info.hp + "/" + info.maxhp);
-                    }
+                    //for(int i = 0; i < 3; i++) {
+                    //    mhw.MonsterInfo info = mhw.getMonsterInfo(i);
+                    //    // if(info.maxhp > 0) Console.WriteLine(i + ": " + info.hp + "/" + info.maxhp);
+                    //}
+                    mhw.getMonsterInfo_NEW();
 					my_seat_id = playerSeatID;
                     if (players[0].isValid) {
                         update_info(my_seat_id < 0);
