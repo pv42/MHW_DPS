@@ -158,7 +158,7 @@ public static class mhw {
 
     public static long damage_base_loc1 = -1L;
 
-    public static long names_base_adress = -1L;
+    public static long names_base_address = -1L;
 
 
     private static Process game;
@@ -173,17 +173,17 @@ public static class mhw {
         mhw_dps_wpf.MainWindow.assert(source.Count() == 1, "frm_main_load: #proc not 1. (Is the game running?)");
         game = source.FirstOrDefault();
         try {
-            Console.WriteLine("Game base adress 0x" + game.MainModule.BaseAddress.ToString("X"));
+            Console.WriteLine("Game base address 0x" + game.MainModule.BaseAddress.ToString("X"));
         } catch (Exception) {
             mhw_dps_wpf.MainWindow.assert(flag: false, "access denied. (Is the game running as admin while the tool isn't? ) WEGAME版必须以管理员身份运行");
         }
     }
 
-    // checks the processes memory structure and loads gets adresses 
+    // checks the processes memory structure and loads gets addresses 
     public static void initMemory() {
         find_game_proc();
         bool flag = game.MainWindowTitle.Contains("3142");
-        Console.WriteLine("main module base adress 0x" + game.MainModule.BaseAddress.ToString("X"));
+        Console.WriteLine("main module base address 0x" + game.MainModule.BaseAddress.ToString("X"));
         List<byte?[]> patterns = new List<byte?[]> {
             pattern_1,
             pattern_2,
@@ -209,9 +209,9 @@ public static class mhw {
         monster_offset_1 = pattern_results[6];
         ulong num4 = pattern_results[3] +      MemoryHelper.read_uint(game.Handle, (IntPtr)(long)(pattern_results[3] + 3     )) + 7;
         Console.WriteLine("loc1              0x" + num.ToString("X"));
-        Console.WriteLine("dmg base adress 0 0x" + num2.ToString("X"));
-        Console.WriteLine("dmg base adress 1 0x" + num3.ToString("X"));
-        Console.WriteLine("names base adress 0x" + num4.ToString("X"));
+        Console.WriteLine("dmg base address 0 0x" + num2.ToString("X"));
+        Console.WriteLine("dmg base address 1 0x" + num3.ToString("X"));
+        Console.WriteLine("names base address 0x" + num4.ToString("X"));
         mhw_dps_wpf.MainWindow.assert(
             num  > STEP2_LWR && num  < STEP2_UPR &&
             num2 > STEP2_LWR && num2 < STEP2_UPR &&
@@ -221,12 +221,12 @@ public static class mhw {
         );
 
         //--
-        mhw.names_base_adress = (long)num4;
+        mhw.names_base_address = (long)num4;
     }
 
     private static readonly ulong PREV_MONSTER_PTR = 0x28;
 
-    public static MonsterInfo? getMonsterInfo_NEW() {
+    public static void getMonsterInfo(MonsterList list) {
         ulong monsterAndBuffRootPtr = loadEffectiveAddressRelative(game, monster_base_root_offset);
         uint monsterAndBuffOffset1 = readStaticOffset(game, monster_offset_1);
         ulong lastMonsterAddress = MemoryHelper.read_pointer_chain(game, monsterAndBuffRootPtr, monsterAndBuffOffset1, 0x8F9BC * 8, 0, 0);
@@ -235,20 +235,23 @@ public static class mhw {
 
         if (lastMonsterAddress < 0xffffff){
             // no monsters found
-            return null;
+            return;
         }
 
         ulong currentMonsterAddress = lastMonsterAddress;
+        //int i = 0;
         while (currentMonsterAddress != 0) {
             monsterAddresses.Insert(0, currentMonsterAddress);
+            lastMonsterAddress = currentMonsterAddress;
             currentMonsterAddress = MemoryHelper.read_ulong(game.Handle, (IntPtr)(currentMonsterAddress + PREV_MONSTER_PTR));
+            //i++;
+            if(currentMonsterAddress == lastMonsterAddress) break;
         }
+        //Console.WriteLine(i + " monster candidates");
 
-        foreach(ulong monsterAddress in monsterAddresses) {
-            readMonster(monsterAddress);
+        foreach (ulong monsterAddress in monsterAddresses) {
+            readMonster(monsterAddress, list);
         }
-        // todo 
-        return null;
     }
 
     public static uint readStaticOffset(Process process, ulong address){
@@ -276,37 +279,37 @@ public static class mhw {
     public static readonly ulong MONSTER_PART_HEALTH_OFFSET = 0x48;
     //public static readonly ulong FirstPart = 0x50;
 
-    private static Monster readMonster(ulong monsterAddress){
-        Monster monster = null;
+    private static void readMonster(ulong monsterAddress, MonsterList list){
         ulong modelPtr = MemoryHelper.read_ulong(game.Handle, (IntPtr)(monsterAddress + MONSTER_MODEL_OFFSET));
         string id = MemoryHelper.read_string(game.Handle, (IntPtr)(modelPtr + MONSTER_MODEL_ID_OFFSET), (uint)MONSTER_MODEL_ID_LENGTH); //TODO null byte
         if (id == "") {
-            return monster;
+            return;
         }
+        
 
         id = id.Split('\\').Last();
         if (!isMonsterIDValid(id)) {
-            return monster;
+            return;
         }
 
         ulong healthComponentAddress = MemoryHelper.read_ulong(game.Handle, (IntPtr)(monsterAddress + MONSTER_PARTS_OFFSET + MONSTER_PART_HEALTH_OFFSET));
         float maxHealth = MemoryHelper.read_float(game.Handle, (IntPtr)(healthComponentAddress + MONSTER_MAX_HEALTH_OFFSET));
         if (maxHealth <= 0){
-            return monster;
+            return;
         }
 
         float currentHealth = MemoryHelper.read_float(game.Handle, (IntPtr)(healthComponentAddress + MONSTER_CURRENT_HEALTH_OFFSET));
         float sizeScale = MemoryHelper.read_float(game.Handle, (IntPtr)(monsterAddress + MONSTER_SIZE_SCALE_OFFSET));
 
-        monster = new Monster(id, maxHealth, currentHealth, sizeScale);
 
+        list.updateOrAdd(monsterAddress, id, maxHealth, currentHealth, sizeScale);
+        
         //monster = OverlayViewModel.Instance.MonsterWidget.Context.UpdateAndGetMonster(monsterAddress, id, maxHealth, currentHealth, sizeScale);
 
         //UpdateMonsterParts(process, monster);
         //UpdateMonsterRemovableParts(process, monster);
         //UpdateMonsterStatusEffects(process, monster);
 
-        return monster;
     }
 
     private static bool isMonsterIDValid(String id){
@@ -321,60 +324,28 @@ public static class mhw {
     }
 
     public static int get_player_seat_id() {
-        uint num = MemoryHelper.read_uint(game.Handle, (IntPtr)names_base_adress);
+        uint num = MemoryHelper.read_uint(game.Handle, (IntPtr)names_base_address);
         uint num2 = MemoryHelper.read_uint(game.Handle, (IntPtr)(num + 0x258));
         int result = -1;
         if (num2 > 0x1000) {
             uint num3 = MemoryHelper.read_uint(game.Handle, (IntPtr)(long)(num2 + 0x10));
             if (num3 != 0) {
-                result = (int)MemoryHelper.read_uint(game.Handle, (IntPtr)(num3 + 0xBFEC));
+                result = MemoryHelper.read_int(game.Handle, (IntPtr)(num3 + 0xBFEC));
             }
         }
         return result;
     }
 
-    public static MonsterInfo getMonsterInfo(int slot) {
-        //long monster_adress = monster_health_base_adress + (long)(slot * 0x60);
-        MonsterInfo info = new MonsterInfo();
-        //if (slot != 0) return info; // todo 
-        //byte[] mem_uint64 = new byte[8];
-        byte[] mem_float = new byte[4];
-        /*ReadProcessMemory(proc.Handle, (IntPtr)monster_adress, mem_uint64);
-        ulong of0 = BitConverter.ToUInt64(mem_uint64, 0);
-        ReadProcessMemory(proc.Handle, (IntPtr)of0 + 0xc58, mem_uint64);
-        ulong of1 = BitConverter.ToUInt64(mem_uint64, 0);
-        if (of1 > 0x0) {
-            ReadProcessMemory(proc.Handle, (IntPtr)of1 + 0x8a8, mem_uint64);
-            ulong of2 = BitConverter.ToUInt64(mem_uint64, 0);
-            ReadProcessMemory(proc.Handle, (IntPtr)of2 + 0x3b0, mem_uint64);
-            ulong of3 = BitConverter.ToUInt64(mem_uint64, 0);
-            ReadProcessMemory(proc.Handle, (IntPtr)of3 + 0x18, mem_uint64);
-            ulong of4 = BitConverter.ToUInt64(mem_uint64, 0);
-            ReadProcessMemory(proc.Handle, (IntPtr)of4 + 0x58, mem_uint64);
-            ulong of5 = BitConverter.ToUInt64(mem_uint64, 0);
-            ReadProcessMemory(proc.Handle, (IntPtr)of5 + 0x60, mem_float);
-            info.maxhp = BitConverter.ToSingle(mem_float, 0);
-            ReadProcessMemory(proc.Handle, (IntPtr)of5 + 0x64, mem_float);
-            info.hp = BitConverter.ToSingle(mem_float, 0);
-        }*/ // 8a8 3b0 18 58 64
-        ulong monster_info_adr = getULongFromPointerChain(new ulong[] { 0x03b318e0, 0xc58, 0x8a8, 0x3b0, 0x18, 0x58});
-        MemoryHelper.read_bytes(game.Handle, (IntPtr)monster_info_adr + 0x60, mem_float);
-        info.maxhp = BitConverter.ToSingle(mem_float, 0);
-        MemoryHelper.read_bytes(game.Handle, (IntPtr)monster_info_adr + 0x64, mem_float);
-        info.hp = BitConverter.ToSingle(mem_float, 0);
-        return info;
-    }
-
     private static ulong getULongFromPointerChain(ulong[] chain) {
         byte[] mem_uint64 = new byte[8];
-        ulong adress;
+        ulong address;
         for (int i = 0; i < chain.Length; i++) {
             if (i == 0) {
-                adress = (ulong)game.MainModule.BaseAddress.ToInt64();
+                address = (ulong)game.MainModule.BaseAddress.ToInt64();
             } else {
-                adress = BitConverter.ToUInt64(mem_uint64, 0);
+                address = BitConverter.ToUInt64(mem_uint64, 0);
             }
-            MemoryHelper.read_bytes(game.Handle, (IntPtr)(adress + chain[i]), mem_uint64);
+            MemoryHelper.read_bytes(game.Handle, (IntPtr)(address + chain[i]), mem_uint64);
         }
         return BitConverter.ToUInt64(mem_uint64, 0);
     }

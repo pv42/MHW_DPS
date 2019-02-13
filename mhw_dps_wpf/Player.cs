@@ -6,14 +6,11 @@ namespace mhw_dps_wpf {
         bool _valid;
         string _name;
         public bool isValid {
-            get {
-                return _valid;
-            }
+            get => _valid;
         }
         public string name {
-            get {
-                return _name;
-            }
+            get => _name;
+            
             set {
                 _name = value;
                 _valid = (_name.Length > 0); 
@@ -122,7 +119,6 @@ namespace mhw_dps_wpf {
             }
         }
 
-
         public Player(int damage, MainWindow window) {
             _window = window;
             _damage = damage;
@@ -140,7 +136,7 @@ namespace mhw_dps_wpf {
             _window.log("reseted player " + name);
             if(_window.logFile == null) {
                 _window.logFile = new LogFile();
-                _window.logFile.writeHead(_window.players);
+                _window.logFile.writeHead();
             }
 
         }

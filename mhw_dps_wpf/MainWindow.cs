@@ -14,7 +14,7 @@ namespace mhw_dps_wpf {
 		private DispatcherTimer dispatcherTimer = new DispatcherTimer();
 
         public PlayerList players;
-        public Monster[] monsters = new Monster[3];
+        public MonsterList monsters;
 
 		private int my_seat_id = -5;
 
@@ -50,6 +50,7 @@ namespace mhw_dps_wpf {
 			base.Background = Brushes.Transparent;
             mhw.initMemory();
             players = new PlayerList(this);
+            monsters = new MonsterList(this);
             InitializeComponent();
 		}
 
@@ -75,7 +76,7 @@ namespace mhw_dps_wpf {
                     //    mhw.MonsterInfo info = mhw.getMonsterInfo(i);
                     //    // if(info.maxhp > 0) Console.WriteLine(i + ": " + info.hp + "/" + info.maxhp);
                     //}
-                    mhw.getMonsterInfo_NEW();
+                    monsters.update();
 					my_seat_id = playerSeatID;
                     if (players[0].isValid) {
                         update_info(my_seat_id < 0);

@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 
 [assembly: CompilationRelaxations(8)]
-[assembly: RuntimeCompatibility(WrapNonExceptionThrows = true)]
+[assembly: RuntimeCompatibility(WrapNonExceptionThrows = false)] // true
 [assembly: Debuggable(DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints)]
 [assembly: AssemblyTitle("MHW DPS WPF")]
 [assembly: AssemblyDescription("Monster Hunter World Damage Meter")]

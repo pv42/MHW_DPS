@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace mhw_dps_wpf {
     public class LogFile {
         const String PATH_SEPERATOR = "\\";
-        public const UInt16 FILE_VERSION = 5;
+        public const UInt16 FILE_VERSION = 7;
 
         private FileStream fs;
         private BinaryWriter bw;
@@ -19,13 +19,12 @@ namespace mhw_dps_wpf {
             player_indices = new Dictionary<string, int>();
         }
 
-        public void writeHead(PlayerList playerList) {
+        public void writeHead() {
             bw.Write('M'); // marker for filetype
             bw.Write('H');
             bw.Write('W');
             bw.Write('L');
             bw.Write(FILE_VERSION);
-            int len = playerList.getPlayerNumber();
             int headSize = 2 + 2 + 6; 
             bw.Write((UInt32)headSize); // head size
             writeMarker(Marker.UnixTime);
@@ -49,17 +48,19 @@ namespace mhw_dps_wpf {
             bw.Write((UInt32)hit); 
         }
 
-        public void writeMonsterHP(int monsterIndex, float hp) {
+        public void writeMonsterHP(ulong unique_id, float hp) {
             writeMarker(Marker.MonsterHP);
-            bw.Write((UInt16)monsterIndex);
+            bw.Write((UInt16)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() - start_time)); // time
+            bw.Write((UInt64)unique_id);
             bw.Write((float)hp);
         }
 
-        public void writeMonsterInfo(int monsterIndex, string name, float max_hp) {
+        public void writeMonsterInfo(ulong unique_id,string name_id, float max_hp, float sizescale) {
             writeMarker(Marker.MonsterInfo);
-            bw.Write((UInt16)monsterIndex);
-            bw.Write(name);
-            bw.Write((float)max_hp);
+            bw.Write((UInt64)unique_id);
+            bw.Write(name_id);
+            bw.Write(max_hp);
+            bw.Write(sizescale);
         }
 
         public void writeBottomAndClose(PlayerList playerList) {
