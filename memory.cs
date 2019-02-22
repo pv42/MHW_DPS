@@ -24,7 +24,7 @@ public static class MemoryHelper {
 	private static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION64 lpBuffer, uint dwLength);
 
 	[DllImport("kernel32.dll")]
-	public static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
+	public static extern bool ReadProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, byte[] lpBuffer, int dwSize, ref int lpNumberOfBytesRead);
 
 
     // find a pattern in a byte array, returns a list of all matches start indices 
@@ -84,7 +84,7 @@ public static class MemoryHelper {
 		do {
 			if (VirtualQueryEx(proc.Handle, intPtr, out MEMORY_BASIC_INFORMATION64 lpBuffer, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION64))) > 0 && lpBuffer.RegionSize != 0) {
 				byte[] memory = new byte[(uint)lpBuffer.RegionSize];
-				read_bytes(proc.Handle, (IntPtr)(long)lpBuffer.BaseAddress, memory);
+				read_bytes(proc.Handle, (UIntPtr)(long)lpBuffer.BaseAddress, memory);
 				for (int i = 0; i < patterns.Count; i++) {
 					if(results[i] == 0) {
 						int match = byte_find_first(memory, patterns[i]);
@@ -101,43 +101,43 @@ public static class MemoryHelper {
 	}
 
     // reads a bytearray from a process at a given address, the lenght is the lenght of the buffer given to write to
-    public static bool read_bytes(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer) {
+    public static bool read_bytes(IntPtr hProcess, UIntPtr lpBaseAddress, byte[] lpBuffer) {
         int lpNumberOfBytesRead = 0;
         return ReadProcessMemory(hProcess, lpBaseAddress, lpBuffer, lpBuffer.Length, ref lpNumberOfBytesRead);
     }
 
     // reads an uint64 from a process at a given address
-    public static ulong read_ulong(IntPtr process, IntPtr lpBaseAddress) {
+    public static ulong read_ulong(IntPtr process, UIntPtr lpBaseAddress) {
         read_bytes(process, lpBaseAddress, buffer64);
         return BitConverter.ToUInt64(buffer64, 0);
     }
 
     // reads an uint64 from a process at a given address
-    public static long read_long(IntPtr hProcess, IntPtr lpBaseAddress) {
+    public static long read_long(IntPtr hProcess, UIntPtr lpBaseAddress) {
         read_bytes(hProcess, lpBaseAddress, buffer64);
         return BitConverter.ToInt64(buffer64, 0);
     }
 
     // reads an uint32 from a process at a given address
-    public static uint read_uint(IntPtr hProcess, IntPtr lpBaseAddress) {
+    public static uint read_uint(IntPtr hProcess, UIntPtr lpBaseAddress) {
         read_bytes(hProcess, lpBaseAddress, buffer32);
         return BitConverter.ToUInt32(buffer32, 0);
     }
 
     // reads an int32 from a process at a given address
-    public static int read_int(IntPtr hProcess, IntPtr lpBaseAddress) {
+    public static int read_int(IntPtr hProcess, UIntPtr lpBaseAddress) {
         read_bytes(hProcess, lpBaseAddress, buffer32);
         return BitConverter.ToInt32(buffer32, 0);
     }
 
     // reads a float (or single) from a process at a given address
-    public static float read_float(IntPtr hProcess, IntPtr lpBaseAddress) {
+    public static float read_float(IntPtr hProcess, UIntPtr lpBaseAddress) {
         read_bytes(hProcess, lpBaseAddress, buffer32);
         return BitConverter.ToSingle(buffer32, 0);
     }
 
     // read a null terminated string from a process at a given address with maxlengh (the null terminater must be in the max_lengh bytes)
-    public static string read_string(IntPtr hProcess, IntPtr lpBaseAddress, uint max_lengh) {
+    public static string read_string(IntPtr hProcess, UIntPtr lpBaseAddress, uint max_lengh) {
         string str;
         byte[] mem = new byte[max_lengh];
         MemoryHelper.read_bytes(hProcess, lpBaseAddress, mem);
@@ -156,7 +156,7 @@ public static class MemoryHelper {
     public static ulong read_pointer_chain(Process process, ulong address, params ulong[] offsets) {
         ulong result = address;
         foreach (ulong offset in offsets) {
-            ulong readResult = MemoryHelper.read_ulong(process.Handle, (IntPtr)address);
+            ulong readResult = MemoryHelper.read_ulong(process.Handle, (UIntPtr)address);
             result = readResult + offset;
             address = result;
         }

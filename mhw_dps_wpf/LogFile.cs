@@ -4,16 +4,16 @@ using System.Collections.Generic;
 
 namespace mhw_dps_wpf {
     public class LogFile {
-        const String PATH_SEPERATOR = "\\";
-        public const UInt16 FILE_VERSION = 7;
+        const string PATH_SEPERATOR = "\\";
+        public const ushort FILE_VERSION = 7;
 
         private FileStream fs;
         private BinaryWriter bw;
-        private Int32 start_time;
+        private int start_time;
         private Dictionary<string, int> player_indices;
         public LogFile() {
             ensurePathExists();
-            String name = getSavePath() + DateTime.Now.ToString("dd.MM.yyyy HH.mm.ss") + ".mhlog";
+            string name = getSavePath() + DateTime.Now.ToString("dd.MM.yyyy HH.mm.ss") + ".mhlog";
             fs = new FileStream(name, FileMode.Create, FileAccess.Write);
             bw = new BinaryWriter(fs);
             player_indices = new Dictionary<string, int>();
@@ -26,9 +26,9 @@ namespace mhw_dps_wpf {
             bw.Write('L');
             bw.Write(FILE_VERSION);
             int headSize = 2 + 2 + 6; 
-            bw.Write((UInt32)headSize); // head size
+            bw.Write((uint)headSize); // head size
             writeMarker(Marker.UnixTime);
-            start_time = (Int32)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            start_time = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             bw.Write(start_time); //care for the Y2K38 bug
             bw.Flush();
         }
@@ -135,12 +135,12 @@ namespace mhw_dps_wpf {
 
         private void ensurePathExists() {
             if (!Directory.Exists(getSavePath())) {
-                System.IO.Directory.CreateDirectory(getSavePath());
+                Directory.CreateDirectory(getSavePath());
                 Console.WriteLine("Log path (" + getSavePath() + ")created");
             }
         }
 
-        public enum Marker {
+        enum Marker {
             PlayerList,
             PlayerIndex,
             UnixTime,

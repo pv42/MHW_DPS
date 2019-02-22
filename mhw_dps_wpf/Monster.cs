@@ -20,15 +20,20 @@ namespace mhw_dps_wpf {
     public class Monster {
         public ulong memory_address;
         public string id;
+        public MonsterDataHelper.MonsterSpezies spezies;
         //public int index;
         public HealthInfo health;
-        //public SizeCrown crown;
+        public SizeCrown crown;
         public float size;
         public bool valid;
+        public string name {
+            get {
+                return MonsterDataHelper.getMonsterName(spezies);
+            }
+        }
         private MainWindow window;
         //public Collection<MonsterPart> parts;
         public Monster(ulong address, string id, float max_hp, float c_hp, float size, MainWindow window) {
-            Console.WriteLine("id:" + id + " hp:" + c_hp + "/" + max_hp + "size:" + size);
             this.memory_address = address;
             this.id = id;
             this.health = new HealthInfo();
@@ -36,6 +41,9 @@ namespace mhw_dps_wpf {
             this.health.current = c_hp;
             this.size = size;
             this.window = window;
+            spezies = MonsterDataHelper.getSpeziesById(id);
+            crown = MonsterDataHelper.getCrown(size, spezies);
+            Console.WriteLine("" + name + " hp:" + c_hp + "/" + max_hp + " size: " + size + " c: " + crown.ToString());
             valid = true;
         }
         public void update(string id, float max_hp, float c_hp, float size) {
@@ -49,9 +57,10 @@ namespace mhw_dps_wpf {
             valid = true;
             if (this.size != size || this.health.max != max_hp || this.id != id){
                 this.size = size;
+                crown = MonsterDataHelper.getCrown(size, spezies);
                 this.health.max = max_hp;
                 this.id = id;
-                Console.WriteLine("MONSER info changed for " + id + " mhp: " + max_hp);
+                Console.WriteLine("MONSTER info changed for " + id + " mhp: " + max_hp);
                 window.logFile.writeMonsterInfo(memory_address, id, max_hp, size);
             }
         }

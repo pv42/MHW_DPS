@@ -134,8 +134,9 @@ public static class mhw {
     private static readonly byte?[] pattern_player_names = new byte?[]{
         0x48,0x8b,0x0d,null,null,null,null,0x48,0x8d,0x54,0x24,0x38,0xc6,0x44,0x24,0x20,0x00,0x4d,0x8b,0x40,0x08,0xe8,null,null,null,null,0x48,0x8b,0x5c,0x24,0x60,0x48,0x83,0xc4,0x50,0x5f,0xc3
     };
-    private static readonly byte?[] pattern_player_damage= new byte?[]{
-        0x48,0x8b,0x0d,null,null,null,null,0x48,0x89,0x7c,0x24,null,0xe8,null,null,null,null,0x48,0x85,0xc0,0x75,null,0x33,0xff
+    private static readonly byte?[] pattern_player_damage = new byte?[]{
+        0x48,0x8b,0x0d,null,null,null,null,0xe8,null,null,null,null,0x48,0x8b,0xd8,0x48,0x85,0xc0, 0x75, 0x04, 0x33
+        //48   8B    0D ??    ??   ??   ??   E8   ??   ??   ??   ??    48   8B  D8   48   85 C0 75 04 33 C9
     };
     private static readonly byte?[] pattern_monster = new byte?[]{
         0x48,0x8b,0x15,null,null,null,null,0x48,0x8b,0x29,0x48,0x63,0x82,null,null,null,null
@@ -185,37 +186,35 @@ public static class mhw {
         bool flag = game.MainWindowTitle.Contains("3142");
         Console.WriteLine("main module base address 0x" + game.MainModule.BaseAddress.ToString("X"));
         List<byte?[]> patterns = new List<byte?[]> {
-            pattern_1,
             pattern_2,
-            pattern_3,
             pattern_player_names,
             pattern_player_damage,
             pattern_monster,
             pattern_monster_1
         };
-        ulong[] pattern_results = MemoryHelper.find_patterns(game, (IntPtr)0x140004000L, (IntPtr)0x145000000L, patterns);
+        ulong[] pattern_results = MemoryHelper.find_patterns(game, (IntPtr)0x140004000L, (IntPtr)0x151000000L, patterns);
         bool step1_flag = true;
         for(int i = 0; i < 4; i++) {
             step1_flag = step1_flag &&(pattern_results[i] > STEP1_UPR);
-            Console.WriteLine("FLAG 1 STEP " + i + " VALUE " + pattern_results[i]);
+            Console.WriteLine("FLAG 1 STEP " + i + " VALUE 0x" + pattern_results[i].ToString("X"));
         }
         mhw_dps_wpf.MainWindow.assert(step1_flag, "failed to locate offsets (step 1).");
-        ulong num  = pattern_results[0] +      MemoryHelper.read_uint(game.Handle, (IntPtr)(long)(pattern_results[0] + 2     )) + 6;
-        ulong num2 = pattern_results[1] + 51 + MemoryHelper.read_uint(game.Handle, (IntPtr)(long)(pattern_results[1] + 54    )) + 7;
-        ulong num3 = pattern_results[2] + 15 + MemoryHelper.read_uint(game.Handle, (IntPtr)(long)(pattern_results[2] + 15 + 2)) + 6;
-        player_names_root_offset = pattern_results[3];
-        player_damages_root_offset = pattern_results[4];
-        monster_base_root_offset = pattern_results[5];
-        monster_offset_1 = pattern_results[6];
-        ulong num4 = pattern_results[3] +      MemoryHelper.read_uint(game.Handle, (IntPtr)(long)(pattern_results[3] + 3     )) + 7;
-        Console.WriteLine("loc1              0x" + num.ToString("X"));
+        //ulong num  = pattern_results[0] +      MemoryHelper.read_uint(game.Handle, (UIntPtr)(long)(pattern_results[0] + 2     )) + 6;
+        ulong num2 = pattern_results[0] + 51 + MemoryHelper.read_uint(game.Handle, (UIntPtr)(long)(pattern_results[0] + 54    )) + 7;
+        //ulong num3 = pattern_results[2] + 15 + MemoryHelper.read_uint(game.Handle, (UIntPtr)(long)(pattern_results[2] + 15 + 2)) + 6;
+        player_names_root_offset = pattern_results[1];
+        player_damages_root_offset = pattern_results[2];
+        monster_base_root_offset = pattern_results[3];
+        monster_offset_1 = pattern_results[4];
+        ulong num4 = pattern_results[1] +      MemoryHelper.read_uint(game.Handle, (UIntPtr)(long)(pattern_results[1] + 3     )) + 7;
+        //Console.WriteLine("loc1              0x" + num.ToString("X"));
         Console.WriteLine("dmg base address 0 0x" + num2.ToString("X"));
-        Console.WriteLine("dmg base address 1 0x" + num3.ToString("X"));
+        //Console.WriteLine("dmg base address 1 0x" + num3.ToString("X"));
         Console.WriteLine("names base address 0x" + num4.ToString("X"));
         mhw_dps_wpf.MainWindow.assert(
-            num  > STEP2_LWR && num  < STEP2_UPR &&
+            //num  > STEP2_LWR && num  < STEP2_UPR &&
             num2 > STEP2_LWR && num2 < STEP2_UPR &&
-            num3 > STEP2_LWR && num3 < STEP2_UPR &&
+            //num3 > STEP2_LWR && num3 < STEP2_UPR &&
             num4 > STEP2_LWR && num4 < STEP2_UPR,
             "failed to locate offsets (step 2)."
         );
@@ -243,7 +242,7 @@ public static class mhw {
         while (currentMonsterAddress != 0) {
             monsterAddresses.Insert(0, currentMonsterAddress);
             lastMonsterAddress = currentMonsterAddress;
-            currentMonsterAddress = MemoryHelper.read_ulong(game.Handle, (IntPtr)(currentMonsterAddress + PREV_MONSTER_PTR));
+            currentMonsterAddress = MemoryHelper.read_ulong(game.Handle, (UIntPtr)(currentMonsterAddress + PREV_MONSTER_PTR));
             //i++;
             if(currentMonsterAddress == lastMonsterAddress) break;
         }
@@ -256,7 +255,7 @@ public static class mhw {
 
     public static uint readStaticOffset(Process process, ulong address){
         const uint opcodeLength = 3;
-        return MemoryHelper.read_uint(game.Handle, (IntPtr)(address + opcodeLength));
+        return MemoryHelper.read_uint(game.Handle, (UIntPtr)(address + opcodeLength));
     }
 
     // Monster
@@ -267,7 +266,7 @@ public static class mhw {
     //public static readonly ulong RemovablePartCollection = PartCollection + 0x1ED0;
     //public static readonly ulong StatusEffectCollection = 0x19870;
     // MonsterModel
-    private static readonly int MONSTER_MODEL_ID_LENGTH = 64;
+    private static readonly uint MONSTER_MODEL_ID_LENGTH = 64;
     private static readonly ulong MONSTER_MODEL_ID_OFFSET = 0x0C;
     
     // MonsterHealthComponent
@@ -280,8 +279,8 @@ public static class mhw {
     //public static readonly ulong FirstPart = 0x50;
 
     private static void readMonster(ulong monsterAddress, MonsterList list){
-        ulong modelPtr = MemoryHelper.read_ulong(game.Handle, (IntPtr)(monsterAddress + MONSTER_MODEL_OFFSET));
-        string id = MemoryHelper.read_string(game.Handle, (IntPtr)(modelPtr + MONSTER_MODEL_ID_OFFSET), (uint)MONSTER_MODEL_ID_LENGTH); //TODO null byte
+        ulong modelPtr = MemoryHelper.read_ulong(game.Handle, (UIntPtr)(monsterAddress + MONSTER_MODEL_OFFSET));
+        string id = MemoryHelper.read_string(game.Handle, (UIntPtr)(modelPtr + MONSTER_MODEL_ID_OFFSET), MONSTER_MODEL_ID_LENGTH); //TODO null byte
         if (id == "") {
             return;
         }
@@ -292,14 +291,14 @@ public static class mhw {
             return;
         }
 
-        ulong healthComponentAddress = MemoryHelper.read_ulong(game.Handle, (IntPtr)(monsterAddress + MONSTER_PARTS_OFFSET + MONSTER_PART_HEALTH_OFFSET));
-        float maxHealth = MemoryHelper.read_float(game.Handle, (IntPtr)(healthComponentAddress + MONSTER_MAX_HEALTH_OFFSET));
+        ulong healthComponentAddress = MemoryHelper.read_ulong(game.Handle, (UIntPtr)(monsterAddress + MONSTER_PARTS_OFFSET + MONSTER_PART_HEALTH_OFFSET));
+        float maxHealth = MemoryHelper.read_float(game.Handle, (UIntPtr)(healthComponentAddress + MONSTER_MAX_HEALTH_OFFSET));
         if (maxHealth <= 0){
             return;
         }
 
-        float currentHealth = MemoryHelper.read_float(game.Handle, (IntPtr)(healthComponentAddress + MONSTER_CURRENT_HEALTH_OFFSET));
-        float sizeScale = MemoryHelper.read_float(game.Handle, (IntPtr)(monsterAddress + MONSTER_SIZE_SCALE_OFFSET));
+        float currentHealth = MemoryHelper.read_float(game.Handle, (UIntPtr)(healthComponentAddress + MONSTER_CURRENT_HEALTH_OFFSET));
+        float sizeScale = MemoryHelper.read_float(game.Handle, (UIntPtr)(monsterAddress + MONSTER_SIZE_SCALE_OFFSET));
 
 
         list.updateOrAdd(monsterAddress, id, maxHealth, currentHealth, sizeScale);
@@ -310,7 +309,7 @@ public static class mhw {
         //UpdateMonsterRemovableParts(process, monster);
         //UpdateMonsterStatusEffects(process, monster);
 
-    }
+    } // todo overflow
 
     private static bool isMonsterIDValid(String id){
         string IncludeMonsterIdRegex = "em[0-9]";
@@ -324,13 +323,13 @@ public static class mhw {
     }
 
     public static int get_player_seat_id() {
-        uint num = MemoryHelper.read_uint(game.Handle, (IntPtr)names_base_address);
-        uint num2 = MemoryHelper.read_uint(game.Handle, (IntPtr)(num + 0x258));
+        uint num = MemoryHelper.read_uint(game.Handle, (UIntPtr)names_base_address);
+        uint num2 = MemoryHelper.read_uint(game.Handle, (UIntPtr)(num + 0x258));
         int result = -1;
         if (num2 > 0x1000) {
-            uint num3 = MemoryHelper.read_uint(game.Handle, (IntPtr)(long)(num2 + 0x10));
+            uint num3 = MemoryHelper.read_uint(game.Handle, (UIntPtr)(long)(num2 + 0x10));
             if (num3 != 0) {
-                result = MemoryHelper.read_int(game.Handle, (IntPtr)(num3 + 0xBFEC));
+                result = MemoryHelper.read_int(game.Handle, (UIntPtr)(num3 + 0xBFEC));
             }
         }
         return result;
@@ -345,7 +344,7 @@ public static class mhw {
             } else {
                 address = BitConverter.ToUInt64(mem_uint64, 0);
             }
-            MemoryHelper.read_bytes(game.Handle, (IntPtr)(address + chain[i]), mem_uint64);
+            MemoryHelper.read_bytes(game.Handle, (UIntPtr)(address + chain[i]), mem_uint64);
         }
         return BitConverter.ToUInt64(mem_uint64, 0);
     }
@@ -360,20 +359,26 @@ public static class mhw {
         return game.HasExited;
     }
     //----------------------------------------------------------------------------
-    public static readonly uint PLAYER_NAME_LENGHT = 0x28; 
+    public static readonly uint PLAYER_NAME_LENGHT = 0x21; 
     public static readonly ulong FIRST_PLAYER_NAME_OFFSET = 0x54A45;
     public static string get_team_player_name(int index) {
         ulong playerNamesPtr = loadEffectiveAddressRelative(game, player_names_root_offset);
-        uint playerNamesAddress = MemoryHelper.read_uint(game.Handle, (IntPtr)playerNamesPtr);
+        uint playerNamesAddress = MemoryHelper.read_uint(game.Handle, (UIntPtr)playerNamesPtr);
         ulong playerNameOffset = PLAYER_NAME_LENGHT * (ulong)index;
-        string name = MemoryHelper.read_string(game.Handle, (IntPtr)(playerNamesAddress + FIRST_PLAYER_NAME_OFFSET + playerNameOffset), PLAYER_NAME_LENGHT);
+        string name = MemoryHelper.read_string(game.Handle, (UIntPtr)(playerNamesAddress + FIRST_PLAYER_NAME_OFFSET + playerNameOffset), PLAYER_NAME_LENGHT);
         return name;
     }
     public static ulong loadEffectiveAddressRelative(Process process, ulong address){
         const uint opcodeLength = 3;
         const uint paramLength = 4;
         const uint instructionLength = opcodeLength + paramLength;
-        return address + MemoryHelper.read_uint(process.Handle, (IntPtr)(address + opcodeLength)) + instructionLength;
+        uint operand = MemoryHelper.read_uint(process.Handle, (UIntPtr)(address + opcodeLength));
+        ulong operand64 = operand;
+        // 64 bit relative addressing 
+        if (operand64 > Int32.MaxValue) {
+            operand64 = 0xffffffff00000000 | operand64;
+        }
+        return address + operand64 + instructionLength;
     }
 
 
@@ -392,12 +397,12 @@ public static class mhw {
         ulong playerDamageCollectionAddress = MemoryHelper.read_pointer_chain(game, playerDamageRootPtr, 0x48 + 0x20 * 0x58);
         ulong firstPlayerPtr = playerDamageCollectionAddress + FIRST_STATS_PLAYER_OFFSET;
         ulong currentPlayerPtr = firstPlayerPtr + ((ulong)index * NEXT_STATS_PLAYER_OFFSET);
-        ulong currentPlayerAddress = MemoryHelper.read_ulong(game.Handle, (IntPtr)currentPlayerPtr);
-        int damage = MemoryHelper.read_int(game.Handle, (IntPtr)(currentPlayerAddress + PLAYER_STATS_DAMAGE_OFFSET));
-        int parts = MemoryHelper.read_int(game.Handle, (IntPtr)(currentPlayerAddress + PLAYER_STATS_PARTS_OFFSET));
-        int located = MemoryHelper.read_int(game.Handle, (IntPtr)(currentPlayerAddress + PLAYER_STATS_LOCATED_OFFSET));
-        int tracks = MemoryHelper.read_int(game.Handle, (IntPtr)(currentPlayerAddress + PLAYER_STATS_TRACKS_OFFSET));
-        int slingers = MemoryHelper.read_int(game.Handle, (IntPtr)(currentPlayerAddress + PLAYER_STATS_SLINGERS_OFFSET));
+        ulong currentPlayerAddress = MemoryHelper.read_ulong(game.Handle, (UIntPtr)currentPlayerPtr);
+        int damage = MemoryHelper.read_int(game.Handle, (UIntPtr)(currentPlayerAddress + PLAYER_STATS_DAMAGE_OFFSET));
+        int parts = MemoryHelper.read_int(game.Handle, (UIntPtr)(currentPlayerAddress + PLAYER_STATS_PARTS_OFFSET));
+        int located = MemoryHelper.read_int(game.Handle, (UIntPtr)(currentPlayerAddress + PLAYER_STATS_LOCATED_OFFSET));
+        int tracks = MemoryHelper.read_int(game.Handle, (UIntPtr)(currentPlayerAddress + PLAYER_STATS_TRACKS_OFFSET));
+        int slingers = MemoryHelper.read_int(game.Handle, (UIntPtr)(currentPlayerAddress + PLAYER_STATS_SLINGERS_OFFSET));
         stats[(int)player_data_indices.damages] = damage;
         stats[(int)player_data_indices.parts] = parts;
         stats[(int)player_data_indices.located] = located;

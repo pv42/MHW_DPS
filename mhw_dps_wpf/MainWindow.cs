@@ -52,15 +52,22 @@ namespace mhw_dps_wpf {
             players = new PlayerList(this);
             monsters = new MonsterList(this);
             InitializeComponent();
+            current = this;
 		}
 
-		public static void assert(bool flag, string reason = "", bool show_reason = true) {
-			if (!flag) {
+        private static MainWindow current;
+
+        public static void assert(bool flag, string reason = "", bool show_reason = true) {
+            if (!flag) {
                 if (show_reason) {
-					MessageBox.Show("assertion failed: " + reason);
-				}
+                    MessageBox.Show("assertion failed: " + reason);
+                }
                 Application.Current.Shutdown();
             }
+        }
+        
+        private void _assert(bool flag, string reason = "", bool show_reason = true) {
+			
         }
 
 		private void update_tick(object sender, EventArgs e) {
